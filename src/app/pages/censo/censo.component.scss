@@ -1,0 +1,262 @@
+.censo-container {
+    min-height: 100vh;
+    background: #f9fafb;
+    padding-bottom: 80px;
+}
+
+.censo-header {
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+    position: sticky;
+    top: 64px;
+    z-index: 100;
+
+    .header-content {
+        max-width: 1600px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .title-section {
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .subtitle {
+            margin: 0.25rem 0 0 0;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .stats-summary {
+        display: flex;
+        gap: 1rem;
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            padding: 0.5rem 0.875rem;
+            background: #f9fafb;
+            border-radius: 6px;
+            min-width: 70px;
+            border: 1px solid #e5e7eb;
+
+            .stat-label {
+                font-size: 0.7rem;
+                color: #6b7280;
+                font-weight: 500;
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
+            }
+
+            .stat-value {
+                font-size: 1.375rem;
+                font-weight: 600;
+                color: #1f2937;
+                margin-top: 0.125rem;
+            }
+        }
+    }
+
+    .btn-export {
+        padding: 0.625rem 1.25rem;
+        background: #1f2937;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+        font-size: 0.875rem;
+
+        &:hover:not(:disabled) {
+            background: #111827;
+        }
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .material-symbols-outlined {
+            font-size: 1.125rem;
+        }
+
+        .spinner {
+            width: 1.125rem;
+            height: 1.125rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.censo-main {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.secao-censo {
+    margin-bottom: 2rem;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+
+    .secao-header {
+        padding: 1rem 1.5rem;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        h2 {
+            margin: 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .secao-stats {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #6b7280;
+        }
+    }
+
+    .leitos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1rem;
+        padding: 1.5rem;
+    }
+
+    .add-leito-card {
+        background: #f9fafb;
+        border: 2px dashed #d1d5db;
+        border-radius: 8px;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-height: 150px;
+        color: #6b7280;
+
+        &:hover {
+            border-color: #9ca3af;
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .material-symbols-outlined {
+            font-size: 2.5rem;
+        }
+
+        span:not(.material-symbols-outlined) {
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+    }
+}
+
+// Responsive
+@media (max-width: 1200px) {
+    .censo-header {
+        .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .header-actions {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch;
+
+            .stats-summary {
+                width: 100%;
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .btn-export {
+                justify-content: center;
+            }
+        }
+    }
+
+    .secao-censo {
+        .leitos-grid {
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .censo-container {
+        padding-bottom: 100px;
+    }
+
+    .censo-header {
+        padding: 1rem;
+        top: 64px;
+
+        .stats-summary {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+    }
+
+    .censo-main {
+        padding: 0 1rem;
+    }
+
+    .secao-censo {
+        .secao-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+
+            h2 {
+                font-size: 1rem;
+            }
+        }
+
+        .leitos-grid {
+            grid-template-columns: 1fr;
+            padding: 1rem;
+        }
+    }
+}

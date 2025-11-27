@@ -1,0 +1,77 @@
+<div class="chat-container">
+    <!-- Header -->
+    <header class="chat-header">
+        <div class="header-content">
+            <h2>Chat da Equipe</h2>
+            <span class="status-badge">Online</span>
+        </div>
+    </header>
+
+    <!-- Messages Area -->
+    <div class="messages-area" #messagesContainer>
+        @if (messages.length === 0) {
+        <div class="empty-state">
+            <span class="material-symbols-outlined">forum</span>
+            <p>Nenhuma mensagem ainda. Comece a conversa!</p>
+        </div>
+        } @else {
+        @for (msg of messages; track msg.id) {
+        <div class="message-wrapper" [class.own-message]="isCurrentUser(msg)">
+            <div class="message-bubble">
+                <div class="message-info">
+                    <span class="username" [style.color]="getUserColor(msg.usuario)">
+                        {{ msg.usuario }}
+                    </span>
+                    <span class="time">{{ formatTime(msg.timestamp) }}</span>
+                </div>
+
+                @if (msg.imagem) {
+                <div class="message-image">
+                    <img [src]="msg.imagem" alt="Imagem enviada" loading="lazy">
+                </div>
+                }
+
+                @if (msg.texto) {
+                <p class="message-text">{{ msg.texto }}</p>
+                }
+            </div>
+        </div>
+        }
+        }
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-area">
+        <!-- Image Preview -->
+        @if (selectedImage && imagePreview) {
+        <div class="image-preview">
+            <img [src]="imagePreview" alt="Preview">
+            <button class="btn-remove-image" (click)="clearImageSelection()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        }
+
+        <div class="input-controls">
+            <button class="btn-attach" (click)="triggerFileInput()" [disabled]="isUploading" title="Enviar imagem">
+                <span class="material-symbols-outlined">image</span>
+            </button>
+            <input type="file" #fileInput (change)="onImageSelected($event)" accept="image/*" hidden>
+
+            <input type="text" [(ngModel)]="newMessage" (keypress)="onKeyPress($event)"
+                placeholder="Digite sua mensagem..." [disabled]="isUploading">
+
+            <button class="btn-send" (click)="sendMessage()"
+                [disabled]="(!newMessage.trim() && !selectedImage) || isUploading">
+                @if (isUploading) {
+                <span class="material-symbols-outlined spin">sync</span>
+                } @else {
+                <span class="material-symbols-outlined">send</span>
+                }
+            </button>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />

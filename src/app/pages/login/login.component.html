@@ -1,0 +1,194 @@
+<div class="login-container">
+    <!-- Animated Background -->
+    <div class="animated-background">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+
+        <!-- Heartbeat SVG Animation -->
+        <svg class="heartbeat-svg" viewBox="0 0 1200 200">
+            <path class="heartbeat-line"
+                d="M0,100 L200,100 L220,80 L240,120 L260,100 L300,100 L320,60 L340,140 L360,100 L500,100 L520,80 L540,120 L560,100 L700,100 L720,60 L740,140 L760,100 L900,100 L920,80 L940,120 L960,100 L1200,100" />
+        </svg>
+    </div>
+
+    <!-- Login Card -->
+    <div class="login-card">
+        <div class="card-header">
+            <div class="logo-wrapper">
+                <span class="material-symbols-outlined logo-icon">local_hospital</span>
+            </div>
+            <h1>NIRs</h1>
+            <p>Sistema de Gestão para UPAs</p>
+        </div>
+
+        <!-- Login Form -->
+        <form *ngIf="!isRegisterMode" [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+            <!-- User input -->
+            <div class="form-group">
+                <div class="floating-input" [class.has-value]="usuario?.value"
+                    [class.has-error]="usuario?.invalid && usuario?.touched">
+                    <input type="text" id="usuario" formControlName="usuario" autocomplete="username" required />
+                    <label for="usuario">
+                        <span class="material-symbols-outlined">person</span>
+                        <span>Email ou Usuário</span>
+                    </label>
+                    <div class="input-border"></div>
+                </div>
+                @if (usuario?.invalid && usuario?.touched) {
+                <span class="error-message">Campo obrigatório</span>
+                }
+            </div>
+
+            <!-- Password input -->
+            <div class="form-group">
+                <div class="floating-input" [class.has-value]="senha?.value"
+                    [class.has-error]="senha?.invalid && senha?.touched">
+                    <input type="password" id="senha" formControlName="senha" autocomplete="current-password"
+                        required />
+                    <label for="senha">
+                        <span class="material-symbols-outlined">lock</span>
+                        <span>Senha</span>
+                    </label>
+                    <div class="input-border"></div>
+                </div>
+                @if (senha?.invalid && senha?.touched) {
+                <span class="error-message">Senha é obrigatória (mín. 6 caracteres)</span>
+                }
+            </div>
+
+            <!-- Error message -->
+            @if (errorMessage) {
+            <div class="alert-error">
+                <span class="material-symbols-outlined">error</span>
+                <span>{{ errorMessage }}</span>
+            </div>
+            }
+
+            <!-- Submit button -->
+            <button type="submit" class="btn-login" [disabled]="isLoading">
+                @if (isLoading) {
+                <span class="spinner"></span>
+                <span>Entrando...</span>
+                } @else {
+                <span>Entrar</span>
+                <span class="material-symbols-outlined">arrow_forward</span>
+                }
+            </button>
+
+            <!-- Toggle to register -->
+            <div class="toggle-mode">
+                <span>Não tem uma conta?</span>
+                <button type="button" class="btn-toggle" (click)="toggleMode()">Criar Conta</button>
+            </div>
+        </form>
+
+        <!-- Register Form -->
+        <form *ngIf="isRegisterMode" [formGroup]="registerForm" (ngSubmit)="onRegister()" class="login-form">
+            <!-- Display Name input -->
+            <div class="form-group">
+                <div class="floating-input" [class.has-value]="displayName?.value"
+                    [class.has-error]="displayName?.invalid && displayName?.touched">
+                    <input type="text" id="displayName" formControlName="displayName" autocomplete="name" required />
+                    <label for="displayName">
+                        <span class="material-symbols-outlined">badge</span>
+                        <span>Nome Completo</span>
+                    </label>
+                    <div class="input-border"></div>
+                </div>
+                @if (displayName?.invalid && displayName?.touched) {
+                <span class="error-message">Nome deve ter pelo menos 3 caracteres</span>
+                }
+            </div>
+
+            <!-- Email input -->
+            <div class="form-group">
+                <div class="floating-input" [class.has-value]="email?.value"
+                    [class.has-error]="email?.invalid && email?.touched">
+                    <input type="email" id="email" formControlName="email" autocomplete="email" required />
+                    <label for="email">
+                        <span class="material-symbols-outlined">mail</span>
+                        <span>Email</span>
+                    </label>
+                    <div class="input-border"></div>
+                </div>
+                @if (email?.invalid && email?.touched) {
+                <span class="error-message">Email inválido</span>
+                }
+            </div>
+
+            <!-- Password input -->
+            <div class="form-group">
+                <div class="floating-input" [class.has-value]="registerSenha?.value"
+                    [class.has-error]="registerSenha?.invalid && registerSenha?.touched">
+                    <input type="password" id="registerSenha" formControlName="senha" autocomplete="new-password"
+                        required />
+                    <label for="registerSenha">
+                        <span class="material-symbols-outlined">lock</span>
+                        <span>Senha</span>
+                    </label>
+                    <div class="input-border"></div>
+                </div>
+                @if (registerSenha?.invalid && registerSenha?.touched) {
+                <span class="error-message">Senha deve ter pelo menos 6 caracteres</span>
+                }
+            </div>
+
+            <!-- Confirm Password input -->
+            <div class="form-group">
+                <div class="floating-input" [class.has-value]="confirmarSenha?.value"
+                    [class.has-error]="(confirmarSenha?.invalid && confirmarSenha?.touched) || (!passwordsMatch && confirmarSenha?.touched)">
+                    <input type="password" id="confirmarSenha" formControlName="confirmarSenha"
+                        autocomplete="new-password" required />
+                    <label for="confirmarSenha">
+                        <span class="material-symbols-outlined">lock_reset</span>
+                        <span>Confirmar Senha</span>
+                    </label>
+                    <div class="input-border"></div>
+                </div>
+                @if (confirmarSenha?.invalid && confirmarSenha?.touched) {
+                <span class="error-message">Campo obrigatório</span>
+                }
+                @if (!passwordsMatch && confirmarSenha?.touched && confirmarSenha?.value) {
+                <span class="error-message">As senhas não correspondem</span>
+                }
+            </div>
+
+            <!-- Success message -->
+            @if (successMessage) {
+            <div class="alert-success">
+                <span class="material-symbols-outlined">check_circle</span>
+                <span>{{ successMessage }}</span>
+            </div>
+            }
+
+            <!-- Error message -->
+            @if (errorMessage) {
+            <div class="alert-error">
+                <span class="material-symbols-outlined">error</span>
+                <span>{{ errorMessage }}</span>
+            </div>
+            }
+
+            <!-- Submit button -->
+            <button type="submit" class="btn-login" [disabled]="isLoading">
+                @if (isLoading) {
+                <span class="spinner"></span>
+                <span>Criando conta...</span>
+                } @else {
+                <span>Criar Conta</span>
+                <span class="material-symbols-outlined">arrow_forward</span>
+                }
+            </button>
+
+            <!-- Toggle to login -->
+            <div class="toggle-mode">
+                <span>Já tem uma conta?</span>
+                <button type="button" class="btn-toggle" (click)="toggleMode()">Fazer Login</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />

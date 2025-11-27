@@ -1,0 +1,271 @@
+$primary-color: #3b82f6;
+$bg-color: #f3f4f6;
+$border-color: #e5e7eb;
+$text-dark: #1f2937;
+$text-gray: #6b7280;
+
+:host {
+    display: block;
+    height: calc(100vh - 64px); // Subtract header height
+    background-color: $bg-color;
+    padding: 1rem;
+}
+
+.chat-container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+// Header
+.chat-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid $border-color;
+    background: white;
+
+    .header-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+
+        h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: $text-dark;
+        }
+
+        .status-badge {
+            background-color: #d1fae5;
+            color: #059669;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+
+            &::before {
+                content: '';
+                display: block;
+                width: 6px;
+                height: 6px;
+                background-color: #059669;
+                border-radius: 50%;
+                margin-right: 6px;
+            }
+        }
+    }
+}
+
+// Messages Area
+.messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background-color: #f9fafb;
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: $text-gray;
+        opacity: 0.7;
+
+        .material-symbols-outlined {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+    }
+
+    .message-wrapper {
+        display: flex;
+        justify-content: flex-start;
+        max-width: 80%;
+
+        &.own-message {
+            align-self: flex-end;
+            justify-content: flex-end;
+
+            .message-bubble {
+                background-color: #eff6ff;
+                border: 1px solid #dbeafe;
+                border-bottom-right-radius: 4px;
+            }
+        }
+
+        &:not(.own-message) {
+            .message-bubble {
+                background-color: white;
+                border: 1px solid $border-color;
+                border-bottom-left-radius: 4px;
+            }
+        }
+    }
+
+    .message-bubble {
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        min-width: 200px;
+
+        .message-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-size: 0.75rem;
+
+            .username {
+                font-weight: 600;
+            }
+
+            .time {
+                color: $text-gray;
+                margin-left: 1rem;
+            }
+        }
+
+        .message-image {
+            margin-bottom: 0.5rem;
+
+            img {
+                max-width: 100%;
+                max-height: 300px;
+                border-radius: 8px;
+                object-fit: cover;
+                cursor: pointer;
+            }
+        }
+
+        .message-text {
+            margin: 0;
+            color: $text-dark;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+    }
+}
+
+// Input Area
+.input-area {
+    padding: 1rem;
+    background: white;
+    border-top: 1px solid $border-color;
+
+    .image-preview {
+        display: inline-block;
+        position: relative;
+        margin-bottom: 0.75rem;
+        border: 1px solid $border-color;
+        border-radius: 8px;
+        padding: 4px;
+
+        img {
+            height: 80px;
+            border-radius: 4px;
+        }
+
+        .btn-remove-image {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+            span {
+                font-size: 14px;
+            }
+        }
+    }
+
+    .input-controls {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid $border-color;
+            border-radius: 9999px;
+            outline: none;
+            transition: border-color 0.2s;
+
+            &:focus {
+                border-color: $primary-color;
+                box-shadow: 0 0 0 2px rgba($primary-color, 0.1);
+            }
+        }
+
+        button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+
+            &.btn-attach {
+                background: #f3f4f6;
+                color: $text-gray;
+
+                &:hover {
+                    background: #e5e7eb;
+                    color: $text-dark;
+                }
+            }
+
+            &.btn-send {
+                background: $primary-color;
+                color: white;
+
+                &:hover:not(:disabled) {
+                    background: darken($primary-color, 10%);
+                }
+
+                &:disabled {
+                    background: #9ca3af;
+                    cursor: not-allowed;
+                }
+            }
+        }
+    }
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}

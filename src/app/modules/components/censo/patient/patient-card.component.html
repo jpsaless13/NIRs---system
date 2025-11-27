@@ -1,0 +1,100 @@
+<div class="patient-card" [class.empty]="!leito.paciente">
+  @if (!leito.paciente) {
+  <!-- Leito Vago -->
+  <div class="empty-bed">
+    <div class="bed-number">Leito {{ leito.numero }}</div>
+    <div class="empty-status">
+      <span class="material-symbols-outlined">bed</span>
+      <p>Vago</p>
+    </div>
+    <div class="empty-actions">
+      <button class="btn-add-patient" (click)="initPaciente()">
+        <span class="material-symbols-outlined">person_add</span>
+        Adicionar Paciente
+      </button>
+      <button class="btn-delete-bed" (click)="onDeleteLeito()">
+        <span class="material-symbols-outlined">delete</span>
+        Excluir Leito
+      </button>
+    </div>
+  </div>
+  } @else {
+  <!-- Leito Ocupado -->
+  <div class="occupied-bed">
+    <div class="card-header">
+      <span class="bed-label">Leito {{ leito.numero }}</span>
+      <button class="btn-remove" (click)="clearPaciente()" title="Dar alta / Esvaziar leito">
+        <span class="material-symbols-outlined">person_remove</span>
+      </button>
+    </div>
+
+    <div class="card-body">
+      <!-- Nome -->
+      <div class="form-group">
+        <label class="floating-label">
+          <input type="text" [(ngModel)]="leito.paciente.nome" (blur)="emitChange()" placeholder=" "
+            class="form-control" />
+          <span>Nome do Paciente</span>
+        </label>
+      </div>
+
+      <!-- Idade e Admissão -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="floating-label">
+            <input type="number" [(ngModel)]="leito.paciente.idade" (blur)="emitChange()" placeholder=" "
+              class="form-control" min="0" max="150" />
+            <span>Idade</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="floating-label">
+            <input type="date" [(ngModel)]="leito.paciente.dataAdmissao" (blur)="emitChange()" placeholder=" "
+              class="form-control" />
+            <span>Data Admissão</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="floating-label">
+            <input type="time" [(ngModel)]="leito.paciente.horaAdmissao" (blur)="emitChange()" placeholder=" "
+              class="form-control" />
+            <span>Hora</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Recurso -->
+      <div class="form-group">
+        <label class="floating-label">
+          <input type="text" [(ngModel)]="leito.paciente.recurso" (blur)="emitChange()" placeholder=" "
+            class="form-control" />
+          <span>Recurso Utilizado</span>
+        </label>
+      </div>
+
+      <!-- Suspeita Diagnóstica -->
+      <div class="form-group">
+        <label class="floating-label">
+          <input type="text" [(ngModel)]="leito.paciente.suspeitaDiagnostica" (blur)="emitChange()" placeholder=" "
+            class="form-control" />
+          <span>Suspeita Diagnóstica</span>
+        </label>
+      </div>
+
+      <!-- Pendências -->
+      <div class="form-group">
+        <label class="floating-label textarea-label">
+          <textarea [(ngModel)]="leito.paciente.pendencias" (blur)="onPendenciasChange()" (input)="onPendenciasChange()"
+            placeholder=" " class="form-control" rows="3"></textarea>
+          <span>Pendências / Observações</span>
+        </label>
+      </div>
+    </div>
+  </div>
+  }
+</div>
+
+<link rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />

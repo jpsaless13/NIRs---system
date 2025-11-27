@@ -1,0 +1,103 @@
+<link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+<div class="dashboard-wrapper">
+
+    <header class="page-header">
+        <div>
+            <h1>Visão Geral da Unidade</h1>
+            <p class="subtitle">Monitoramento em tempo real</p>
+        </div>
+        <div class="user-profile">
+            <span>Dr. Plantonista</span>
+            <div class="avatar">DR</div>
+        </div>
+    </header>
+
+    <section class="kpi-grid">
+        <div *ngFor="let kpi of kpis" class="kpi-card" [ngClass]="kpi.cor">
+            <div class="icon-box">
+                <span Class="material-symbols-outlined">{{kpi.name}}</span>
+            </div>
+            <div class="kpi-info">
+                <span class="label">{{ kpi.titulo }}</span>
+                <div class="value">{{ kpi.valor }}</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-grid">
+
+        <div class="card create-notice-card">
+            <div class="card-header">
+                <h3>Novo Comunicado / Ocorrência</h3>
+                <i class="fas fa-edit header-icon"></i>
+            </div>
+
+            <div class="input-area">
+                <input type="text" [(ngModel)]="novoAvisoTitulo" placeholder="Título do aviso" class="title-input">
+                <textarea [(ngModel)]="novoAvisoMensagem"
+                    placeholder="Digite aqui a ocorrência, troca de plantão ou aviso importante..." rows="4"></textarea>
+
+                <div class="actions-row">
+                    <div class="priority-wrapper">
+                        <span class="label-prio">Tipo:</span>
+                        <div class="radio-group">
+                            <label [class.active]="novoAvisoTipo === 'info'">
+                                <input type="radio" name="prio" [(ngModel)]="novoAvisoTipo" value="info">
+                                Info
+                            </label>
+                            <label [class.active]="novoAvisoTipo === 'critico'" class="urgente-opt">
+                                <input type="radio" name="prio" [(ngModel)]="novoAvisoTipo" value="critico">
+                                Crítico
+                            </label>
+                            <label [class.active]="novoAvisoTipo === 'sucesso'" class="sucesso-opt">
+                                <input type="radio" name="prio" [(ngModel)]="novoAvisoTipo" value="sucesso">
+                                Sucesso
+                            </label>
+                        </div>
+                    </div>
+
+                    <button class="btn-send" (click)="publicarAviso()"
+                        [disabled]="!novoAvisoTitulo.trim() || !novoAvisoMensagem.trim()">
+                        Publicar
+                        <span class="send-icon">➤</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card notice-board-card">
+            <div class="card-header sticky-top">
+                <h3>Últimas Atualizações</h3>
+                <span class="badge-count">{{ avisos.length }}</span>
+            </div>
+
+            <div class="feed-container">
+                <div *ngFor="let aviso of avisos" class="feed-item" [ngClass]="aviso.tipo">
+                    <div class="feed-indicator"></div>
+                    <div class="feed-content">
+                        <div class="msg-header">
+                            <strong>{{ aviso.titulo }}</strong>
+                            <span class="msg-time">{{ formatDate(aviso.data) }}</span>
+                        </div>
+                        <p class="msg-text">{{ aviso.mensagem }}</p>
+                        <div class="msg-footer">
+                            <span *ngIf="aviso.tipo === 'critico'" class="tag-urgent">CRÍTICO</span>
+                            <button class="btn-delete" (click)="deleteAviso(aviso.id)">
+                                <span class="material-symbols-outlined">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                @if(avisos.length === 0){
+                <div class="empty-state">
+                    <p>Nenhum aviso recente no mural.</p>
+                </div>
+                }
+            </div>
+        </div>
+
+    </section>
+</div>

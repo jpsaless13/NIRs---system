@@ -1,0 +1,58 @@
+<header>
+    <nav class="navbar">
+        <button class="hamburger-btn" (click)="toggleMenu()">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+        </button>
+
+        <div class="brand">
+            <h1>NIRs</h1>
+        </div>
+
+        <button class="logout-btn" (click)="logout()">
+            <span class="material-symbols-outlined">logout</span>
+            <span class="logout-text">Sair</span>
+        </button>
+    </nav>
+</header>
+
+<aside [class.active]="menuOpen">
+    <ul>
+        <li>
+            <a routerLink="/dashboard" routerLinkActive="active" (click)="closeMenu()">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span>Dashboard</span>
+            </a>
+        </li>
+        <li>
+            <a routerLink="/censo" routerLinkActive="active" (click)="closeMenu()">
+                <span class="material-symbols-outlined">clinical_notes</span>
+                <span>Censo Hospitalar</span>
+            </a>
+        </li>
+        <li>
+            <a routerLink="/chat" routerLinkActive="active" (click)="closeMenu()">
+                <span class="material-symbols-outlined">chat</span>
+                <span>Chat em Tempo Real</span>
+            </a>
+        </li>
+        <li>
+            <a routerLink="/pendencias" routerLinkActive="active" (click)="closeMenu()">
+                <span class="material-symbols-outlined">assignment</span>
+                <span>Pendências</span>
+            </a>
+        </li>
+        <li *ngIf="isAdmin">
+            <a routerLink="/admin/create-user" routerLinkActive="active" (click)="closeMenu()">
+                <span class="material-symbols-outlined">person_add</span>
+                <span>Criar Usuário</span>
+            </a>
+        </li>
+    </ul>
+</aside>
+
+<div class="overlay" [class.active]="menuOpen" (click)="toggleMenu()"></div>
+
+<link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />

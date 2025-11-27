@@ -1,0 +1,185 @@
+:host {
+    // Variáveis
+    $header-bg: #1f2937;
+    $sidebar-bg: #ffffff;
+    $text-dark: #1f2937;
+    $text-light: #ffffff;
+    $border-color: #e5e7eb;
+    $hover-bg: #f3f4f6;
+    $active-color: #3b82f6;
+    $header-height: 64px;
+
+    header {
+        background-color: $header-bg;
+        width: 100%;
+        height: $header-height;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+        .navbar {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+
+          
+            .hamburger-btn {
+                background: transparent;
+                border: none;
+                cursor: pointer;
+                padding: 5px;
+                display: flex; 
+                flex-direction: column;
+                justify-content: space-between;
+                height: 24px; 
+                width: 30px;  
+                transition: transform 0.2s;
+
+                &:hover {
+                    transform: scale(1.1);
+                }
+
+                .bar {
+                    display: block;
+                    width: 100%;
+                    height: 3px;
+                    background-color: $text-light;
+                    border-radius: 2px;
+                }
+            }
+
+            .brand h1 {
+                color: $text-light;
+                margin: 0;
+                font-size: 1.25rem;
+                font-weight: 600;
+                letter-spacing: -0.5px;
+                // Ajuste visual para centralizar se desejar, ou manter à esquerda
+            }
+
+            .logout-btn {
+                background: transparent;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                color: $text-light;
+                padding: 0.5rem 1rem;
+                border-radius: 6px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                font-size: 0.875rem;
+                font-weight: 500;
+                transition: all 0.2s;
+
+                &:hover {
+                    background: rgba(255, 255, 255, 0.1);
+                    border-color: rgba(255, 255, 255, 0.3);
+                }
+
+                .material-symbols-outlined {
+                    font-size: 1.125rem;
+                }
+            }
+        }
+    }
+
+    // O ASIDE agora é fixo e oculto por padrão PARA TODAS AS TELAS
+    aside {
+        position: fixed;
+        top: $header-height;
+        left: 0;
+        width: 260px;
+        height: calc(100vh - #{$header-height});
+        background-color: $sidebar-bg;
+        border-right: 1px solid $border-color;
+        z-index: 999;
+        
+        // Estado Padrão: Escondido à esquerda
+        transform: translateX(-100%); 
+        transition: transform 0.3s ease-in-out;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+
+        // Estado Ativo: Visível
+        &.active {
+            transform: translateX(0);
+        }
+
+        ul {
+            list-style: none;
+            padding: 1rem 0;
+            margin: 0;
+
+            li {
+                width: 100%;
+
+                a {
+                    display: flex;
+                    align-items: center;
+                    padding: 0.875rem 1.25rem;
+                    color: #6b7280;
+                    text-decoration: none;
+                    font-weight: 500;
+                    font-size: 0.95rem;
+                    transition: all 0.2s;
+                    border-left: 3px solid transparent;
+                    gap: 0.75rem;
+
+                    .material-symbols-outlined {
+                        font-size: 1.375rem;
+                    }
+
+                    &:hover {
+                        background-color: $hover-bg;
+                        color: $text-dark;
+                    }
+
+                    &.active {
+                        background-color: #eff6ff;
+                        color: $active-color;
+                        border-left-color: $active-color;
+                    }
+                }
+            }
+        }
+    }
+
+    // Overlay visível em todas as resoluções quando o menu abre
+    .overlay {
+        position: fixed;
+        top: $header-height; // Começa abaixo do header
+        left: 0;
+        width: 100vw;
+        height: calc(100vh - #{$header-height});
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 900;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease;
+        backdrop-filter: blur(2px); // Efeito visual agradável
+
+        &.active {
+            opacity: 1;
+            visibility: visible;
+        }
+    }
+}
+
+// Media query APENAS para detalhes menores (como esconder texto do botão sair em celulares)
+// Não afeta mais a estrutura do menu
+@media (max-width: 768px) {
+    :host {
+        header .navbar {
+            .logout-btn .logout-text {
+                display: none; // Esconde o texto "Sair", mantém ícone
+            }
+            
+            .logout-btn {
+                padding: 0.5rem; // Ajusta padding quando só tem ícone
+            }
+        }
+    }
+}
