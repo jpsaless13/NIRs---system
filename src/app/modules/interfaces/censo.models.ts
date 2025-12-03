@@ -23,6 +23,8 @@ export interface Paciente {
     pendencias: string;
     status: StatusPaciente;
     destino?: string; // Para quando estiver aguardando transporte
+    unidadeDestino?: string; // Para quando estiver regulado
+    numeroRegulacao?: string;
 }
 
 export interface Leito {
@@ -39,10 +41,28 @@ export interface SecaoCenso {
     corHeader: string;
 }
 
-export interface PendenciaItem {
+export interface PendenciaGeral {
+    id?: string;
+    titulo: string;
+    descricao: string;
+    prioridade: 'baixa' | 'media' | 'alta';
+    status: 'pendente' | 'concluida';
+    timestamp: Date;
+    destinatarioCargo?: string;
+    criadoPor?: string;
+}
+
+export interface PendenciaPaciente {
+    id?: string;
     pacienteId: string;
     pacienteNome: string;
     leitoNumero: number;
     texto: string;
+    status: 'pendente' | 'concluida';
     timestamp: Date;
+    destinatarioCargo?: string; // Cargo/Role that this pendency is for (e.g., 'Médico', 'Enfermeiro')
+    criadoPor?: string; // Name of the user who created it
 }
+
+// Backwards compatibility alias
+export type PendenciaItem = PendenciaPaciente;

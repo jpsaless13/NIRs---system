@@ -1,21 +1,37 @@
 <div class="chat-container">
-    <!-- Header -->
+    <!-- Header with Channel Tabs -->
     <header class="chat-header">
         <div class="header-content">
-            <h2>Chat da Equipe</h2>
+            <h2>
+                @if (currentChannelInfo) {
+                <span class="material-symbols-outlined channel-icon">{{ currentChannelInfo.icon }}</span>
+                }
+                {{ currentChannelInfo?.name || 'Chat da Equipe' }}
+            </h2>
             <span class="status-badge">Online</span>
+        </div>
+
+        <!-- Channel Tabs -->
+        <div class="channel-tabs">
+            @for (channel of channels; track channel.id) {
+            <button class="channel-tab" [class.active]="currentChannel() === channel.id"
+                [style.--channel-color]="channel.color" (click)="switchChannel(channel.id)">
+                <span class="material-symbols-outlined">{{ channel.icon }}</span>
+                <span class="channel-name">{{ channel.name }}</span>
+            </button>
+            }
         </div>
     </header>
 
     <!-- Messages Area -->
     <div class="messages-area" #messagesContainer>
-        @if (messages.length === 0) {
+        @if (messages().length === 0) {
         <div class="empty-state">
             <span class="material-symbols-outlined">forum</span>
             <p>Nenhuma mensagem ainda. Comece a conversa!</p>
         </div>
         } @else {
-        @for (msg of messages; track msg.id) {
+        @for (msg of messages(); track msg.id) {
         <div class="message-wrapper" [class.own-message]="isCurrentUser(msg)">
             <div class="message-bubble">
                 <div class="message-info">
@@ -28,11 +44,33 @@
                 @if (msg.imagem) {
                 <div class="message-image">
                     <img [src]="msg.imagem" alt="Imagem enviada" loading="lazy">
+                    <div class="image-menu">
+                        <button class="menu-trigger" (click)="toggleImageMenu(msg.id!)">
+                            <span class="material-symbols-outlined">more_vert</span>
+                        </button>
+                        @if (activeImageMenu === msg.id) {
+                        <div class="menu-dropdown">
+                            <button (click)="downloadImage(msg); toggleImageMenu(null)">
+                                <span class="material-symbols-outlined">download</span>
+                                Baixar Imagem
+                            </button>
+                        </div>
+                        }
+                    </div>
                 </div>
                 }
 
                 @if (msg.texto) {
                 <p class="message-text">{{ msg.texto }}</p>
+                }
+
+                <!-- Message Actions -->
+                @if (canDeleteMessage(msg)) {
+                <div class="message-actions">
+                    <button class="btn-delete" (click)="deleteMessage(msg)" title="Excluir mensagem">
+                        <span class="material-symbols-outlined">delete</span>
+                    </button>
+                </div>
                 }
             </div>
         </div>

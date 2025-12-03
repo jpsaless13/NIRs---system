@@ -89,6 +89,9 @@
 
 html {
   scroll-behavior: smooth;
+  height: 100%;
+  overflow: hidden;
+  /* Prevent window scroll, let main-content handle it */
 }
 
 body {
@@ -99,6 +102,28 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Global Transitions */
+.transition-all {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-scale {
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.02);
+  }
+}
+
+/* Modern Scrollbar for all scrollable elements */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-400) transparent;
 }
 
 input,

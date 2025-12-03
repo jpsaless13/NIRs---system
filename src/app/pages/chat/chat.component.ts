@@ -1,13 +1,10 @@
 import { User } from './../../modules/interfaces/user.model';
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
 import { ChatService } from '../../modules/services/chat.service';
 import { AuthService } from '../../modules/services/auth.service';
-import { ChatMessage } from '../../modules/interfaces/chat.models';
-
-
+import { ChatMessage, ChatChannel, ChatChannelInfo } from '../../modules/interfaces/chat.models';
 
 @Component({
     selector: 'app-chat',
@@ -16,38 +13,40 @@ import { ChatMessage } from '../../modules/interfaces/chat.models';
     templateUrl: './chat.component.html',
     styleUrl: './chat.component.scss'
 })
-export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
+export class ChatComponent implements OnInit, AfterViewChecked {
     @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
     @ViewChild('fileInput') private fileInput!: ElementRef;
 
-    messages: ChatMessage[] = [];
+    private chatService = inject(ChatService);
+    private authService = inject(AuthService);
+
+    // Signals
+    messages = this.chatService.messages;
+    currentChannel = this.chatService.currentChannel;
+    channels = this.chatService.channels;
+
     newMessage: string = '';
     currentUser: User | null = null;
     selectedImage: File | null = null;
     imagePreview: string | null = null;
     isUploading: boolean = false;
+    activeImageMenu: string | null = null; // NEW: for 3-dot menu
 
-    private messagesSubscription?: Subscription;
     private shouldScrollToBottom = false;
 
-    constructor(
-        private chatService: ChatService,
-        private authService: AuthService
-    ) { }
+    constructor() {
+        // Effect to handle scrolling when messages change
+        effect(() => {
+            const msgs = this.messages(); // Track dependency
+            if (msgs.length > 0) {
+                this.shouldScrollToBottom = true;
+            }
+        });
+    }
 
     ngOnInit(): void {
         this.currentUser = this.authService.getCurrentUser();
         console.log(this.currentUser);
-        // Subscribe to real-time messages
-        this.messagesSubscription = this.chatService.getMessages().subscribe({
-            next: (messages) => {
-                this.messages = messages;
-                this.shouldScrollToBottom = true;
-            },
-            error: (error) => {
-                console.error('Error loading messages:', error);
-            }
-        });
     }
 
     ngAfterViewChecked(): void {
@@ -57,12 +56,22 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         }
     }
 
-    ngOnDestroy(): void {
-        this.messagesSubscription?.unsubscribe();
+    get currentUserName(): string {
+        return this.currentUser?.displayName || this.currentUser?.email || "user";
     }
 
-    get currentUserName(): string {
-        return  this.currentUser?.email || "user";
+    /**
+     * Switch to a different channel
+     */
+    switchChannel(channel: ChatChannel): void {
+        this.chatService.setCurrentChannel(channel);
+    }
+
+    /**
+     * Get current channel info
+     */
+    get currentChannelInfo(): ChatChannelInfo | undefined {
+        return this.chatService.getChannelInfo(this.currentChannel());
     }
 
     /**
@@ -95,6 +104,50 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         } finally {
             this.isUploading = false;
         }
+    }
+
+    /**
+     * Delete a message
+     */
+    async deleteMessage(message: ChatMessage): Promise<void> {
+        if (!message.id) return;
+
+        if (confirm('Deseja realmente excluir esta mensagem?')) {
+            try {
+                await this.chatService.deleteMessage(message.id);
+            } catch (error) {
+                console.error('Error deleting message:', error);
+                alert('Erro ao excluir mensagem.');
+            }
+        }
+    }
+
+    /**
+     * Download image from message
+     */
+    downloadImage(message: ChatMessage): void {
+        if (!message.imagem || !message.id) return;
+
+        try {
+            this.chatService.downloadImage(message.imagem, message.id);
+        } catch (error) {
+            console.error('Error downloading image:', error);
+            alert('Erro ao fazer download da imagem.');
+        }
+    }
+
+    /**
+     * Toggle image menu
+     */
+    toggleImageMenu(messageId: string | null): void {
+        this.activeImageMenu = this.activeImageMenu === messageId ? null : messageId;
+    }
+
+    /**
+     * Check if current user can delete message
+     */
+    canDeleteMessage(message: ChatMessage): boolean {
+        return message.usuario === this.currentUserName;
     }
 
     /**
@@ -184,13 +237,13 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
             return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         }
 
-        // This week
-        if (diff < 7 * 24 * 60 * 60 * 1000) {
-            const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+        // This week (1-6 days ago)
+        const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+        if (days > 0 && days < 7) {
             return `${days}d atrás`;
         }
 
-        // Older
+        // Older than a week
         return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
     }
 

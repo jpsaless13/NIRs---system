@@ -1,10 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal, computed, effect, Injector, inject } from '@angular/core';
 import { BehaviorSubject, Observable, from, of } from 'rxjs';
 import { Router } from '@angular/router';
 import { Auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, User as FirebaseUser, createUserWithEmailAndPassword, updateProfile } from '@angular/fire/auth';
 import { UserService } from './user.service';
 import { User, UserRole } from '../interfaces/user.model';
 import { switchMap, map, tap } from 'rxjs/operators';
+import { toObservable } from '@angular/core/rxjs-interop';
 
 export interface AuthState {
     isAuthenticated: boolean;
@@ -16,52 +17,105 @@ export interface AuthState {
     providedIn: 'root'
 })
 export class AuthService {
-    private authStateSubject = new BehaviorSubject<AuthState>({
-        isAuthenticated: false,
-        usuario: null,
-        loading: true // Start loading to check auth state
-    });
+    // Signals
+    private _currentUser = signal<User | null>(null);
+    private _loading = signal<boolean>(true);
 
-    authState$: Observable<AuthState> = this.authStateSubject.asObservable();
+    // Public Signals
+    public currentUser = this._currentUser.asReadonly();
+    public loading = this._loading.asReadonly();
+    public isAuthenticated = computed(() => !!this._currentUser());
+
+    // Computed User ID for Effect tracking
+    private userId = computed(() => this._currentUser()?.uid);
+
+    // Compatibility Observable
+    public authState$: Observable<AuthState>;
 
     constructor(
         private auth: Auth,
         private router: Router,
         private userService: UserService
     ) {
+        console.log('AuthService: Constructor called');
+
+        // Initialize compatibility observable
+        this.authState$ = toObservable(computed(() => ({
+            isAuthenticated: this.isAuthenticated(),
+            usuario: this.currentUser(),
+            loading: this.loading()
+        })));
+
         this.initAuthStateListener();
+        this.initInactivityListener();
+        this.initOnlineStatusEffect();
+    }
+
+    private initOnlineStatusEffect() {
+        // Effect to handle Online/Offline status automatically
+        effect((onCleanup) => {
+            const uid = this.userId();
+
+            if (uid) {
+                console.log(`[AuthEffect] User ${uid} detected. Setting Online.`);
+                // Set Online
+                this.userService.updateUserStatus(uid, true);
+
+                // Register cleanup to set Offline when uid changes (logout) or effect destroyed
+                onCleanup(() => {
+                    console.log(`[AuthEffect] User ${uid} session ended. Setting Offline.`);
+                    this.userService.updateUserStatus(uid, false);
+                });
+            }
+        });
+    }
+
+    private inactivityTimer: any;
+    private readonly INACTIVITY_LIMIT_MS = 2 * 60 * 60 * 1000; // 2 hours
+
+    private initInactivityListener() {
+        const resetTimer = () => {
+            if (this.isAuthenticated()) {
+                clearTimeout(this.inactivityTimer);
+                this.inactivityTimer = setTimeout(() => {
+                    this.setAsOffline();
+                }, this.INACTIVITY_LIMIT_MS);
+            }
+        };
+
+        // Listen to activity events
+        ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(event => {
+            window.addEventListener(event, resetTimer);
+        });
+    }
+
+    private setAsOffline() {
+        const user = this.currentUser();
+        if (user) {
+            console.log('User inactive for 2 hours. Setting as offline.');
+            this.userService.updateUserStatus(user.uid, false);
+        }
     }
 
     private initAuthStateListener() {
         onAuthStateChanged(this.auth, async (firebaseUser) => {
             if (firebaseUser) {
                 // Fetch user details from Firestore
-                // Fetch user details from Firestore
                 this.userService.getUser(firebaseUser.uid).subscribe({
                     next: (user) => {
-                        console.log('User fetched from Firestore:', user);
-                        this.authStateSubject.next({
-                            isAuthenticated: true,
-                            usuario: user || this.mapFirebaseUserToUser(firebaseUser),
-                            loading: false
-                        });
+                        // Update signal
+                        this._currentUser.set(user || this.mapFirebaseUserToUser(firebaseUser));
+                        this._loading.set(false);
                     },
                     error: (err) => {
                         console.error('Error fetching user from Firestore:', err);
-                        // Fallback to basic user info
-                        this.authStateSubject.next({
-                            isAuthenticated: true,
-                            usuario: this.mapFirebaseUserToUser(firebaseUser),
-                            loading: false
-                        });
+                        this._currentUser.set(this.mapFirebaseUserToUser(firebaseUser));
+                        this._loading.set(false);
                     }
                 });
             } else {
-                this.authStateSubject.next({
-                    isAuthenticated: false,
-                    usuario: null,
-                    loading: false
-                });
+                this._currentUser.set(null);
+                this._loading.set(false);
             }
         });
     }
@@ -71,19 +125,22 @@ export class AuthService {
             uid: fbUser.uid,
             email: fbUser.email || '',
             displayName: fbUser.displayName || '',
-            role: 'common', // Default role if not found in Firestore
+            role: 'user', // Default role if not found in Firestore
+            cargo: '', // Default empty cargo
+            photoURL: fbUser.photoURL || undefined,
+            avatar: undefined, // Will be populated from Firestore if available
             createdAt: new Date()
         };
     }
 
     login(usuario: string, senha: string): Observable<boolean> {
-        this.setLoading(true);
+        this._loading.set(true);
         return from(signInWithEmailAndPassword(this.auth, usuario, senha)).pipe(
             map(() => true),
             tap({
                 error: (err) => {
                     console.error('Login error:', err);
-                    this.setLoading(false);
+                    this._loading.set(false);
                 }
             })
         );
@@ -91,22 +148,21 @@ export class AuthService {
 
     /**
      * Registers a new user with email and password
-     * Creates user in Firebase Auth and stores user data in Firestore
      */
-    register(email: string, password: string, displayName: string): Observable<boolean> {
-        this.setLoading(true);
+    register(email: string, password: string, displayName: string, cargo: string = ''): Observable<boolean> {
+        this._loading.set(true);
         return from(createUserWithEmailAndPassword(this.auth, email, password)).pipe(
             switchMap(async (userCredential) => {
-                // Update the user's display name
                 if (userCredential.user) {
                     await updateProfile(userCredential.user, { displayName });
 
-                    // Create user document in Firestore
                     const newUser: User = {
                         uid: userCredential.user.uid,
                         email: email,
                         displayName: displayName,
-                        role: 'common', // New users are common by default
+                        role: 'user',
+                        cargo: cargo,
+                        isOnline: false,
                         createdAt: new Date()
                     };
 
@@ -115,34 +171,50 @@ export class AuthService {
                 return true;
             }),
             tap({
-                next: () => this.setLoading(false),
+                next: () => this._loading.set(false),
                 error: (err) => {
                     console.error('Registration error:', err);
-                    this.setLoading(false);
+                    this._loading.set(false);
                 }
             })
         );
     }
 
     logout(): void {
+        // Effect cleanup will handle offline status when _currentUser becomes null
+        this._currentUser.set(null);
+
         signOut(this.auth).then(() => {
+            this.router.navigate(['/login']);
+        }).catch(error => {
+            console.error('Logout error:', error);
             this.router.navigate(['/login']);
         });
     }
 
-    isAuthenticated(): boolean {
-        return this.authStateSubject.value.isAuthenticated;
-    }
-
+    // Public API helpers
     getCurrentUser(): User | null {
-        return this.authStateSubject.value.usuario;
-    }
-    isAdmin(): boolean {
-        return this.authStateSubject.value.usuario?.role === 'admin';
+        return this.currentUser();
     }
 
-    private setLoading(loading: boolean): void {
-        const currentState = this.authStateSubject.value;
-        this.authStateSubject.next({ ...currentState, loading });
+    isAdmin(): boolean {
+        return this.currentUser()?.role === 'admin';
+    }
+
+    /**
+     * Updates the user's profile in Firebase Auth (displayName and photoURL)
+     */
+    async updateUserProfile(displayName?: string, photoURL?: string): Promise<void> {
+        const currentUser = this.auth.currentUser;
+        if (!currentUser) {
+            throw new Error('No user logged in');
+        }
+
+        const updates: any = {};
+        if (displayName !== undefined) updates.displayName = displayName;
+        if (photoURL !== undefined) updates.photoURL = photoURL;
+
+        await updateProfile(currentUser, updates);
+        console.log('Firebase Auth profile updated successfully');
     }
 }

@@ -1,1 +1,7 @@
+<div class="notification-banner" *ngIf="showNotification">
+    <span class="message">{{ notificationMessage }}</span>
+    <button class="close-btn" (click)="closeNotification()">
+        <span class="material-symbols-outlined">close</span>
+    </button>
+</div>
 <router-outlet />

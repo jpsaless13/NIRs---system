@@ -10,8 +10,8 @@
     </header>
 
     <!-- KPI Cards -->
-    <section class="kpi-grid">
-        @for (kpi of kpis; track kpi.name) {
+    <section class="kpi-grid fade-in">
+        @for (kpi of kpis(); track kpi.name) {
         <div class="kpi-card" [ngClass]="kpi.cor">
             <div class="icon-box">
                 <span class="material-symbols-outlined">{{ kpi.name }}</span>
@@ -20,6 +20,13 @@
                 <span class="label">{{ kpi.titulo }}</span>
                 <div class="value">{{ kpi.valor }}</div>
             </div>
+
+            <!-- Click button for history navigation -->
+            @if (['groups', 'exit_to_app', 'local_hospital', 'check_circle'].includes(kpi.name)) {
+            <button class="kpi-action-btn" (click)="navigateToHistory(kpi.name)" title="Ver detalhes">
+                <span class="material-symbols-outlined">ads_click</span>
+            </button>
+            }
         </div>
         }
     </section>
@@ -27,7 +34,7 @@
     <!-- Content Grid -->
     <section class="content-grid">
         <!-- Create Notice Card -->
-        <div class="card create-notice-card">
+        <div class="card create-notice-card slide-in-left">
             <div class="card-header">
                 <h3>Novo Comunicado / Ocorrência</h3>
                 <span class="material-symbols-outlined">edit_note</span>
@@ -72,20 +79,20 @@
         </div>
 
         <!-- Notice Board Card -->
-        <div class="card notice-board-card">
+        <div class="card notice-board-card slide-in-right">
             <div class="card-header sticky-top">
                 <h3>Últimas Atualizações</h3>
-                <span class="badge-count">{{ avisos.length }}</span>
+                <span class="badge-count">{{ avisos().length }}</span>
             </div>
 
             <div class="feed-container">
-                @if (avisos.length === 0) {
+                @if (avisos().length === 0) {
                 <div class="empty-state">
                     <span class="material-symbols-outlined">notifications_none</span>
                     <p>Nenhum aviso recente no mural.</p>
                 </div>
                 } @else {
-                @for (aviso of avisos; track aviso.id) {
+                @for (aviso of avisos(); track aviso.id) {
                 <div class="aviso-card" [ngClass]="aviso.tipo">
                     <div class="aviso-indicator"></div>
                     <div class="aviso-content">

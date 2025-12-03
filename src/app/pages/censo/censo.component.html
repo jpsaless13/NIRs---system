@@ -41,9 +41,9 @@
     </header>
 
     <!-- Main Content -->
-    <main class="censo-main">
-        @for (secao of secoes; track secao.setor) {
-        <section class="secao-censo">
+    <main class="censo-main" cdkDropListGroup>
+        @for (secao of secoes(); track secao.setor) {
+        <section class="secao-censo fade-in">
             <div class="secao-header" [style.background]="secao.corHeader">
                 <h2>{{ secao.titulo }}</h2>
                 <span class="secao-stats">
@@ -51,11 +51,14 @@
                 </span>
             </div>
 
-            <div class="leitos-grid">
+            <div class="leitos-grid" cdkDropList [cdkDropListData]="secao.leitos" (cdkDropListDropped)="drop($event)">
                 @for (leito of secao.leitos; track leito.id) {
-                <app-patient-card [leito]="leito" (pacienteChange)="onPacienteChange(leito.id, $event)"
+                <app-patient-card cdkDrag [leito]="leito" (pacienteChange)="onPacienteChange(leito.id, $event)"
                     (pendenciasChange)="onPendenciasChange(leito.paciente?.id || '', leito.paciente?.nome || '', leito.numero, $event)"
-                    (deleteLeito)="deleteLeito($event)" />
+                    (deleteLeito)="deleteLeito($event)" (darAlta)="onDarAlta($event)"
+                    (removerPaciente)="onRemovePaciente($event)" (updateBedNumber)="onUpdateBedNumber($event)">
+                    <div *cdkDragPlaceholder class="drag-placeholder"></div>
+                </app-patient-card>
                 }
 
                 <!-- Botão para adicionar novo leito -->

@@ -40,6 +40,18 @@ export const routes: Routes = [
             {
                 path: 'admin/create-user',
                 loadComponent: () => import('./pages/admin/create-user/create-user.component').then(m => m.CreateUserComponent)
+            },
+            {
+                path: 'profile-settings',
+                loadComponent: () => import('./pages/profile-settings/profile-settings.component').then(m => m.ProfileSettingsComponent)
+            },
+            {
+                path: 'online-users',
+                loadComponent: () => import('./pages/online-users/online-users.component').then(m => m.OnlineUsersComponent)
+            },
+            {
+                path: 'patient-history',
+                loadComponent: () => import('./pages/patient-history/patient-history.component').then(m => m.PatientHistoryComponent)
             }
         ]
     },

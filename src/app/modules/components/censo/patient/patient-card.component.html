@@ -21,11 +21,48 @@
   } @else {
   <!-- Leito Ocupado -->
   <div class="occupied-bed">
-    <div class="card-header">
-      <span class="bed-label">Leito {{ leito.numero }}</span>
-      <button class="btn-remove" (click)="clearPaciente()" title="Dar alta / Esvaziar leito">
-        <span class="material-symbols-outlined">person_remove</span>
-      </button>
+    <div class="card-header" [ngClass]="getStatusClass()">
+      <div class="bed-number-section">
+        @if (!editingBedNumber) {
+        <span class="bed-label">Leito {{ leito.numero }}</span>
+        <button class="btn-edit-number" (click)="startEditingBedNumber()" title="Editar número do leito">
+          <span class="material-symbols-outlined">edit</span>
+        </button>
+        } @else {
+        <input type="number" [(ngModel)]="tempBedNumber" class="bed-number-input" min="1" />
+        <button class="btn-save" (click)="saveBedNumber()" title="Salvar">
+          <span class="material-symbols-outlined">check</span>
+        </button>
+        <button class="btn-cancel" (click)="cancelEditingBedNumber()" title="Cancelar">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+        }
+      </div>
+
+      <div class="header-actions">
+        <!-- Status Actions Dropdown or Buttons -->
+        <div class="status-actions">
+          <button class="btn-status" (click)="setStatus(StatusPaciente.REGULADO)" title="Marcar como Regulado"
+            [class.active]="leito.paciente.status === StatusPaciente.REGULADO">
+            <span class="material-symbols-outlined">ambulance</span>
+            <span class="btn-label">Regulado</span>
+          </button>
+          <button class="btn-status" (click)="setStatus(StatusPaciente.AGUARDANDO_TRANSPORTE)"
+            title="Aguardando Transporte"
+            [class.active]="leito.paciente.status === StatusPaciente.AGUARDANDO_TRANSPORTE">
+            <span class="material-symbols-outlined">commute</span>
+            <span class="btn-label">Transporte</span>
+          </button>
+        </div>
+
+        <button class="btn-remove" (click)="darAltaPaciente()" title="Dar Alta">
+          <span class="material-symbols-outlined">logout</span>
+        </button>
+
+        <button class="btn-delete-patient" (click)="onRemovePaciente()" title="Remover (Sem Alta)">
+          <span class="material-symbols-outlined">person_remove</span>
+        </button>
+      </div>
     </div>
 
     <div class="card-body">
@@ -33,8 +70,8 @@
       <div class="form-group">
         <label class="floating-label">
           <input type="text" [(ngModel)]="leito.paciente.nome" (blur)="emitChange()" placeholder=" "
-            class="form-control" />
-          <span>Nome do Paciente</span>
+            class="form-control bold-input" />
+          <span class="bold-label">Nome do Paciente</span>
         </label>
       </div>
 
@@ -43,8 +80,8 @@
         <div class="form-group">
           <label class="floating-label">
             <input type="number" [(ngModel)]="leito.paciente.idade" (blur)="emitChange()" placeholder=" "
-              class="form-control" min="0" max="150" />
-            <span>Idade</span>
+              class="form-control bold-input" min="0" max="150" />
+            <span class="bold-label">Idade</span>
           </label>
         </div>
 
@@ -83,12 +120,32 @@
         </label>
       </div>
 
-      <!-- Pendências -->
+      <!-- Número Regulação -->
+      <div class="form-group">
+        <label class="floating-label">
+          <input type="text" [(ngModel)]="leito.paciente.numeroRegulacao" (blur)="emitChange()" placeholder=" "
+            class="form-control" />
+          <span>Nº Regulação</span>
+        </label>
+      </div>
+
+      <!-- Unidade Destino (Only if Regulado) -->
+      @if (leito.paciente.status === 'Regulado') {
+      <div class="form-group">
+        <label class="floating-label">
+          <input type="text" [(ngModel)]="leito.paciente.unidadeDestino" (blur)="emitChange()" placeholder=" "
+            class="form-control" />
+          <span>Unidade Destino</span>
+        </label>
+      </div>
+      }
+
+      <!-- Observações (Legacy Pendencias) -->
       <div class="form-group">
         <label class="floating-label textarea-label">
           <textarea [(ngModel)]="leito.paciente.pendencias" (blur)="onPendenciasChange()" (input)="onPendenciasChange()"
-            placeholder=" " class="form-control" rows="3"></textarea>
-          <span>Pendências / Observações</span>
+            placeholder=" " class="form-control" rows="2"></textarea>
+          <span>Observações Gerais</span>
         </label>
       </div>
     </div>

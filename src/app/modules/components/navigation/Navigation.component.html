@@ -32,9 +32,21 @@
             </a>
         </li>
         <li>
+            <a routerLink="/patient-history" routerLinkActive="active" (click)="closeMenu()">
+                <span class="material-symbols-outlined">history</span>
+                <span>Histórico de Pacientes</span>
+            </a>
+        </li>
+        <li>
             <a routerLink="/chat" routerLinkActive="active" (click)="closeMenu()">
                 <span class="material-symbols-outlined">chat</span>
                 <span>Chat em Tempo Real</span>
+            </a>
+        </li>
+        <li>
+            <a routerLink="/online-users" routerLinkActive="active" (click)="closeMenu()">
+                <span class="material-symbols-outlined">group</span>
+                <span>Usuários Online</span>
             </a>
         </li>
         <li>
@@ -47,6 +59,12 @@
             <a routerLink="/admin/create-user" routerLinkActive="active" (click)="closeMenu()">
                 <span class="material-symbols-outlined">person_add</span>
                 <span>Criar Usuário</span>
+            </a>
+        </li>
+        <li>
+            <a routerLink="/profile-settings" routerLinkActive="active" (click)="closeMenu()">
+                <span class="material-symbols-outlined">settings</span>
+                <span>Configurações</span>
             </a>
         </li>
     </ul>

@@ -1,6 +1,5 @@
-import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { Firestore, collection, doc, setDoc, deleteDoc, updateDoc, query, onSnapshot } from '@angular/fire/firestore';
+import { Injectable, inject, signal, computed, WritableSignal } from '@angular/core';
+import { Firestore, collection, doc, setDoc, deleteDoc, updateDoc, query, onSnapshot, increment } from '@angular/fire/firestore';
 import { Auth, onAuthStateChanged } from '@angular/fire/auth';
 import { Aviso, Kpi } from '../interfaces/dashboard.models';
 
@@ -8,16 +7,18 @@ import { Aviso, Kpi } from '../interfaces/dashboard.models';
     providedIn: 'root'
 })
 export class DashboardService {
-    private avisosSubject = new BehaviorSubject<Aviso[]>([]);
-    private kpisSubject = new BehaviorSubject<Kpi[]>([]);
+    // Signals state
+    private _avisos = signal<Aviso[]>([]);
+    private _kpis = signal<Kpi[]>([]);
 
-    avisos$: Observable<Aviso[]> = this.avisosSubject.asObservable();
-    kpis$: Observable<Kpi[]> = this.kpisSubject.asObservable();
+    // Public read-only signals
+    readonly avisos = this._avisos.asReadonly();
+    readonly kpis = this._kpis.asReadonly();
 
     private auth = inject(Auth);
+    private firestore = inject(Firestore);
 
-
-    constructor(private firestore: Firestore) {
+    constructor() {
         this.initListeners();
     }
 
@@ -38,7 +39,7 @@ export class DashboardService {
                         } as unknown as Aviso;
                     });
                     avisos.sort((a, b) => b.data.getTime() - a.data.getTime());
-                    this.avisosSubject.next(avisos);
+                    this._avisos.set(avisos);
                 }, (error) => {
                     console.error('Error in DashboardService avisos listener:', error);
                 });
@@ -56,14 +57,14 @@ export class DashboardService {
                     if (kpis.length === 0) {
                         this.seedInitialKpis();
                     }
-                    this.kpisSubject.next(kpis);
+                    this._kpis.set(kpis);
                 }, (error) => {
                     console.error('Error in DashboardService kpis listener:', error);
                 });
 
             } else {
-                this.avisosSubject.next([]);
-                this.kpisSubject.next([]);
+                this._avisos.set([]);
+                this._kpis.set([]);
             }
         });
     }
@@ -74,7 +75,8 @@ export class DashboardService {
             { titulo: 'Saídas (Total)', valor: 0, cor: 'green', name: 'exit_to_app' },
             { titulo: 'Saídas Regulação', valor: 0, cor: 'blue', name: 'local_hospital' },
             { titulo: 'Aguard. Transporte', valor: 0, cor: 'orange', name: 'ambulance' },
-            { titulo: 'Pendências', valor: 0, cor: 'red', name: 'person_alert' }
+            { titulo: 'Pendências', valor: 0, cor: 'red', name: 'person_alert' },
+            { titulo: 'Altas', valor: 0, cor: 'green', name: 'check_circle' } // New KPI
         ];
 
         for (const kpi of initialKpis) {
@@ -82,10 +84,6 @@ export class DashboardService {
             const kpiRef = doc(this.firestore, `kpis/${kpi.name}`);
             await setDoc(kpiRef, kpi);
         }
-    }
-
-    getAvisos(): Aviso[] {
-        return this.avisosSubject.value;
     }
 
     async addAviso(aviso: Omit<Aviso, 'id' | 'data'>): Promise<void> {
@@ -104,8 +102,17 @@ export class DashboardService {
     }
 
     async updateKpi(name: string, newValue: string | number): Promise<void> {
-        // Assuming name is the ID as set in seed
         const kpiRef = doc(this.firestore, `kpis/${name}`);
         await updateDoc(kpiRef, { valor: newValue });
+    }
+
+    async incrementKpi(name: string): Promise<void> {
+        const kpiRef = doc(this.firestore, `kpis/${name}`);
+        // Check if document exists first, if not create it (safe guard for new KPIs)
+        // For now, assuming seed handles it or updateDoc fails if not exists? 
+        // updateDoc fails if doc doesn't exist. setDoc with merge is safer if we are unsure.
+        // But we have seed logic. Let's stick to updateDoc but maybe catch error and seed if needed?
+        // Simpler: just use setDoc with merge: true which creates if not exists
+        await setDoc(kpiRef, { valor: increment(1) }, { merge: true });
     }
 }

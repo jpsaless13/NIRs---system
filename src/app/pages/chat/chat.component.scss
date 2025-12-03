@@ -6,7 +6,7 @@ $text-gray: #6b7280;
 
 :host {
     display: block;
-    height: calc(100vh - 64px); // Subtract header height
+    height: calc(100vh - 64px);
     background-color: $bg-color;
     padding: 1rem;
 }
@@ -25,19 +25,26 @@ $text-gray: #6b7280;
 
 // Header
 .chat-header {
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid $border-color;
     background: white;
+    border-bottom: 1px solid $border-color;
 
     .header-content {
         display: flex;
         align-items: center;
-        gap: 1rem;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
 
         h2 {
             margin: 0;
             font-size: 1.25rem;
             color: $text-dark;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+
+            .channel-icon {
+                font-size: 24px;
+            }
         }
 
         .status-badge {
@@ -58,6 +65,52 @@ $text-gray: #6b7280;
                 background-color: #059669;
                 border-radius: 50%;
                 margin-right: 6px;
+            }
+        }
+    }
+
+    // Channel Tabs
+    .channel-tabs {
+        display: flex;
+        padding: 0 1rem;
+        gap: 0.5rem;
+        overflow-x: auto;
+        border-bottom: 1px solid $border-color;
+
+        .channel-tab {
+            background: transparent;
+            border: none;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: $text-gray;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+
+            .material-symbols-outlined {
+                font-size: 20px;
+            }
+
+            .channel-name {
+                @media (max-width: 768px) {
+                    display: none;
+                }
+            }
+
+            &:hover {
+                color: $text-dark;
+                background: #f9fafb;
+            }
+
+            &.active {
+                color: var(--channel-color, $primary-color);
+                border-bottom-color: var(--channel-color, $primary-color);
+                background: transparent;
             }
         }
     }
@@ -118,6 +171,17 @@ $text-gray: #6b7280;
         border-radius: 12px;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         min-width: 200px;
+        position: relative;
+
+        &:hover {
+            .message-actions {
+                opacity: 1;
+            }
+
+            .image-actions {
+                opacity: 1;
+            }
+        }
 
         .message-info {
             display: flex;
@@ -138,6 +202,7 @@ $text-gray: #6b7280;
 
         .message-image {
             margin-bottom: 0.5rem;
+            position: relative;
 
             img {
                 max-width: 100%;
@@ -145,6 +210,72 @@ $text-gray: #6b7280;
                 border-radius: 8px;
                 object-fit: cover;
                 cursor: pointer;
+            }
+
+            .image-menu {
+                position: absolute;
+                top: 0.5rem;
+                right: 0.5rem;
+
+                .menu-trigger {
+                    background: rgba(0, 0, 0, 0.6);
+                    color: white;
+                    border: none;
+                    border-radius: 50%;
+                    width: 32px;
+                    height: 32px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.2s;
+
+                    &:hover {
+                        background: rgba(0, 0, 0, 0.8);
+                        transform: scale(1.1);
+                    }
+
+                    .material-symbols-outlined {
+                        font-size: 18px;
+                    }
+                }
+
+                .menu-dropdown {
+                    position: absolute;
+                    top: 100%;
+                    right: 0;
+                    margin-top: 0.25rem;
+                    background: white;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                    min-width: 180px;
+                    z-index: 100;
+                    overflow: hidden;
+
+                    button {
+                        width: 100%;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.75rem;
+                        padding: 0.75rem 1rem;
+                        border: none;
+                        background: white;
+                        color: $text-dark;
+                        cursor: pointer;
+                        transition: background 0.2s;
+                        text-align: left;
+                        font-size: 0.9rem;
+
+                        &:hover {
+                            background: #f3f4f6;
+                        }
+
+                        .material-symbols-outlined {
+                            font-size: 20px;
+                            color: $primary-color;
+                        }
+                    }
+                }
             }
         }
 
@@ -154,6 +285,40 @@ $text-gray: #6b7280;
             line-height: 1.5;
             white-space: pre-wrap;
             word-break: break-word;
+        }
+
+        .message-actions {
+            position: absolute;
+            top: -12px;
+            right: 8px;
+            display: flex;
+            gap: 0.25rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+
+            .btn-delete {
+                background: white;
+                color: #ef4444;
+                border: 1px solid #fee2e2;
+                border-radius: 6px;
+                width: 28px;
+                height: 28px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: all 0.2s;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+                &:hover {
+                    background: #fee2e2;
+                    transform: scale(1.1);
+                }
+
+                .material-symbols-outlined {
+                    font-size: 16px;
+                }
+            }
         }
     }
 }
@@ -267,5 +432,18 @@ $text-gray: #6b7280;
 
     to {
         transform: rotate(360deg);
+    }
+}
+
+// Responsive
+@media (max-width: 768px) {
+    :host {
+        padding: 0.5rem;
+    }
+
+    .messages-area {
+        .message-wrapper {
+            max-width: 90%;
+        }
     }
 }

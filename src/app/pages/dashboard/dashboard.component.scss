@@ -1,5 +1,4 @@
 .dashboard-wrapper {
-    min-height: 100vh;
     background: #f9fafb;
     padding: 2rem;
 }
@@ -104,6 +103,28 @@
                 font-size: 1.5rem;
                 font-weight: 600;
                 color: #1f2937;
+            }
+        }
+
+        .kpi-action-btn {
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            &:hover {
+                background: #f3f4f6;
+                color: #3b82f6;
+            }
+
+            .material-symbols-outlined {
+                font-size: 1.25rem;
             }
         }
     }

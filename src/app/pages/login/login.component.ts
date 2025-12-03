@@ -42,18 +42,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       confirmarSenha: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
 
-    // Subscribe to auth state
-    this.authService.authState$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(state => {
-        this.isLoading = state.loading;
-
-        if (state.isAuthenticated) {
-          this.router.navigate(['/dashboard']);
-        }
-      });
-
-    // Check if already authenticated
+    // Check if already authenticated on component load
     if (this.authService.isAuthenticated()) {
       this.router.navigate(['/dashboard']);
     }

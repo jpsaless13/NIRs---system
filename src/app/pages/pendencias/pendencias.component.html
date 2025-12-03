@@ -4,40 +4,227 @@
         <div class="header-content">
             <div class="title-section">
                 <h1>Pendências</h1>
-                <p class="subtitle">Lista de pendências dos pacientes</p>
+                <p class="subtitle">Gerencie pendências gerais e de pacientes</p>
             </div>
-            @if (getPendenciasCount() > 0) {
-            <div class="badge-count">{{ getPendenciasCount() }} {{ getPendenciasCount() === 1 ? 'pendência' : 'pendências' }}</div>
-            }
+            <div class="stats">
+                <div class="stat-badge gerais">
+                    <span class="material-symbols-outlined">list_alt</span>
+                    {{ getPendenciasGeraisCount() }} {{ getPendenciasGeraisCount() === 1 ? 'geral' : 'gerais' }}
+                </div>
+                <div class="stat-badge pacientes">
+                    <span class="material-symbols-outlined">personal_injury</span>
+                    {{ getPendenciasPacientesCount() }} {{ getPendenciasPacientesCount() === 1 ? 'paciente' :
+                    'pacientes' }}
+                </div>
+            </div>
         </div>
     </header>
 
-    <!-- Main Content -->
+    <!-- Main Content - Two Columns -->
     <main class="pendencias-main">
-        @if (pendencias.length === 0) {
-        <div class="empty-state">
-            <span class="material-symbols-outlined">task_alt</span>
-            <p>Nenhuma pendência registrada</p>
-            <small>As pendências aparecerão aqui automaticamente</small>
-        </div>
-        } @else {
-        <div class="pendencias-list">
-            @for (pend of pendencias; track pend.pacienteId) {
-            <div class="pendencia-item">
-                <div class="item-header">
-                    <div class="patient-info">
-                        <span class="leito-badge">Leito {{ pend.leitoNumero }}</span>
-                        <span class="patient-name">{{ pend.pacienteNome }}</span>
+        <!-- LEFT COLUMN: General Pendencias -->
+        <section class="pendencias-section gerais slide-in-left">
+            <div class="section-header">
+                <h2>
+                    <span class="material-symbols-outlined">list_alt</span>
+                    Pendências Gerais
+                </h2>
+                <button class="btn-add" (click)="openAddGeralForm()" [disabled]="showAddGeralForm">
+                    <span class="material-symbols-outlined">add</span>
+                    Nova
+                </button>
+            </div>
+
+            <!-- Add/Edit Form -->
+            @if (showAddGeralForm) {
+            <div class="form-card">
+                <h3>{{ editingGeralId ? 'Editar' : 'Nova' }} Pendência Geral</h3>
+                <form (ngSubmit)="saveGeralPendencia()">
+                    <div class="form-group">
+                        <label>Título</label>
+                        <input type="text" [(ngModel)]="geralForm.titulo" name="titulo" class="form-control" required>
                     </div>
-                    <span class="timestamp">{{ formatTime(pend.timestamp) }}</span>
-                </div>
-                <div class="item-body">
-                    <p class="pendencia-text">{{ pend.texto }}</p>
-                </div>
+                    <div class="form-group">
+                        <label>Descrição</label>
+                        <textarea [(ngModel)]="geralForm.descricao" name="descricao" class="form-control" rows="3"
+                            required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Prioridade</label>
+                        <select [(ngModel)]="geralForm.prioridade" name="prioridade" class="form-control">
+                            <option value="baixa">Baixa</option>
+                            <option value="media">Média</option>
+                            <option value="alta">Alta</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Destinatário (Cargo)</label>
+                        <select [(ngModel)]="geralForm.destinatarioCargo" name="destinatarioCargo" class="form-control">
+                            @for (role of availableRoles; track role) {
+                            <option [value]="role">{{ role }}</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-save">
+                            <span class="material-symbols-outlined">save</span>
+                            Salvar
+                        </button>
+                        <button type="button" class="btn-cancel" (click)="cancelGeralForm()">
+                            <span class="material-symbols-outlined">close</span>
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
             </div>
             }
-        </div>
-        }
+
+            <!-- List -->
+            <div class="pendencias-list">
+                @if (pendenciasGerais().length === 0) {
+                <div class="empty-state">
+                    <span class="material-symbols-outlined">checklist</span>
+                    <p>Nenhuma pendência geral</p>
+                    <small>Clique em "Nova" para adicionar</small>
+                </div>
+                } @else {
+                @for (pend of pendenciasGerais(); track pend.id) {
+                <div class="pendencia-item geral" [class.concluida]="pend.status === 'concluida'">
+                    <div class="item-header">
+                        <div class="priority-badge" [ngClass]="getPrioridadeClass(pend.prioridade)">
+                            <span class="material-symbols-outlined">{{ getPrioridadeIcon(pend.prioridade) }}</span>
+                            {{ pend.prioridade }}
+                        </div>
+                        <span class="role-badge" [attr.data-role]="pend.destinatarioCargo">{{ pend.destinatarioCargo ||
+                            'Geral' }}</span>
+                        <div class="item-actions">
+                            <span class="timestamp">{{ formatDate(pend.timestamp) }} {{ formatTime(pend.timestamp)
+                                }}</span>
+                            <button class="btn-icon" (click)="toggleGeralConcluida(pend)"
+                                [title]="pend.status === 'pendente' ? 'Marcar como concluída' : 'Marcar como pendente'">
+                                <span class="material-symbols-outlined">
+                                    {{ pend.status === 'concluida' ? 'check_circle' : 'radio_button_unchecked' }}
+                                </span>
+                            </button>
+                            @if (pend.status === 'pendente') {
+                            <button class="btn-icon" (click)="openEditGeralForm(pend)" title="Editar">
+                                <span class="material-symbols-outlined">edit</span>
+                            </button>
+                            }
+                            <button class="btn-icon btn-delete" (click)="deleteGeralPendencia(pend.id!)"
+                                title="Excluir">
+                                <span class="material-symbols-outlined">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="item-body">
+                        <h4>{{ pend.titulo }}</h4>
+                        <p>{{ pend.descricao }}</p>
+                    </div>
+                </div>
+                }
+                }
+            </div>
+        </section>
+
+        <!-- RIGHT COLUMN: Patient Pendencias -->
+        <section class="pendencias-section pacientes slide-in-right">
+            <div class="section-header">
+                <h2>
+                    <span class="material-symbols-outlined">personal_injury</span>
+                    Pendências de Pacientes
+                </h2>
+                <button class="btn-add" (click)="openAddPacienteForm()" [disabled]="showAddPacienteForm">
+                    <span class="material-symbols-outlined">add</span>
+                    Nova
+                </button>
+            </div>
+
+            <!-- Add Form -->
+            @if (showAddPacienteForm) {
+            <div class="form-card">
+                <h3>Nova Pendência de Paciente</h3>
+                <form (ngSubmit)="savePacientePendencia()">
+                    <div class="form-group">
+                        <label>Paciente</label>
+                        <select [(ngModel)]="pacienteForm.pacienteId" name="pacienteId" class="form-control" required>
+                            <option value="">Selecione um paciente...</option>
+                            @for (leito of getOccupiedLeitos(); track leito.id) {
+                            <option [value]="leito.paciente!.id">
+                                {{ leito.paciente!.nome }} (Leito {{ leito.numero }})
+                            </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Descrição</label>
+                        <textarea [(ngModel)]="pacienteForm.texto" name="texto" class="form-control" rows="3"
+                            required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Destinatário (Cargo)</label>
+                        <select [(ngModel)]="pacienteForm.destinatarioCargo" name="destinatarioCargo"
+                            class="form-control">
+                            @for (role of availableRoles; track role) {
+                            <option [value]="role">{{ role }}</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-save">
+                            <span class="material-symbols-outlined">save</span>
+                            Salvar
+                        </button>
+                        <button type="button" class="btn-cancel" (click)="cancelPacienteForm()">
+                            <span class="material-symbols-outlined">close</span>
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+            }
+
+            <!-- List -->
+            <div class="pendencias-list">
+                @if (pendenciasPacientes().length === 0) {
+                <div class="empty-state">
+                    <span class="material-symbols-outlined">task_alt</span>
+                    <p>Nenhuma pendência de paciente</p>
+                    <small>Pendências são criadas no censo</small>
+                </div>
+                } @else {
+                @for (pend of pendenciasPacientes(); track pend.pacienteId) {
+                <div class="pendencia-item paciente" [class.concluida]="pend.status === 'concluida'">
+                    <div class="item-header">
+                        <div class="patient-info">
+                            <span class="leito-badge">Leito {{ pend.leitoNumero }}</span>
+                            <span class="patient-name">{{ pend.pacienteNome }}</span>
+                            <span class="role-badge" [attr.data-role]="pend.destinatarioCargo">{{ pend.destinatarioCargo
+                                || 'Geral' }}</span>
+                        </div>
+                        <div class="item-actions">
+                            <span class="timestamp">{{ formatDate(pend.timestamp) }} {{ formatTime(pend.timestamp)
+                                }}</span>
+                            <button class="btn-icon" (click)="togglePacienteConcluida(pend)"
+                                [title]="pend.status === 'pendente' ? 'Marcar como concluída' : 'Marcar como pendente'">
+                                <span class="material-symbols-outlined">
+                                    {{ pend.status === 'concluida' ? 'check_circle' : 'radio_button_unchecked' }}
+                                </span>
+                            </button>
+                            <button class="btn-icon btn-delete" (click)="deletePacientePendencia(pend.pacienteId)"
+                                title="Excluir">
+                                <span class="material-symbols-outlined">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="item-body">
+                        <p>{{ pend.texto }}</p>
+                    </div>
+                </div>
+                }
+                }
+            </div>
+        </section>
     </main>
 </div>
 

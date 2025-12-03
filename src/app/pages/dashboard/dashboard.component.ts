@@ -1,11 +1,10 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { DashboardService } from '../../modules/services/dashboard.service';
 import { CensoService } from '../../modules/services/censo.service';
 import { Aviso, Kpi } from '../../modules/interfaces/dashboard.models';
-import { Subject, takeUntil } from 'rxjs';
-
 import { Leito } from '../../modules/interfaces/censo.models';
 
 @Component({
@@ -15,47 +14,45 @@ import { Leito } from '../../modules/interfaces/censo.models';
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
-export class DashboardComponent implements OnInit, OnDestroy {
-  avisos: Aviso[] = [];
-  kpis: Kpi[] = [];
+export class DashboardComponent {
+  private dashboardService = inject(DashboardService);
+  private censoService = inject(CensoService);
+  private router = inject(Router);
 
-  novoAvisoTitulo = '';
-  novoAvisoMensagem = '';
-  novoAvisoTipo: 'critico' | 'info' | 'sucesso' = 'info';
+  // Signals
+  avisos = this.dashboardService.avisos;
 
-  private destroy$ = new Subject<void>();
+  // Use Signal from CensoService directly
+  leitos = this.censoService.leitos;
 
-  constructor(
-    private dashboardService: DashboardService,
-    private censoService: CensoService
-  ) { }
+  // Cumulative KPIs from Firestore
+  cumulativeKpis = this.dashboardService.kpis;
 
-  ngOnInit(): void {
-    this.dashboardService.avisos$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(avisos => {
-        this.avisos = avisos;
-      });
+  // Computed KPIs (Merging Live + Cumulative)
+  kpis = computed(() => {
+    const leitos = this.leitos();
+    const cumulative = this.cumulativeKpis();
 
-    // Subscribe to Censo data to update KPIs
-    this.censoService.leitos$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(leitos => {
-        this.updateKpis(leitos);
-      });
-  }
+    console.log('📊 Dashboard: Computing KPIs. Leitos count:', leitos.length);
 
-  private updateKpis(leitos: Leito[]): void {
     const totalLeitos = leitos.length;
-    const leitosOcupados = leitos.filter(l => l.paciente !== null).length;
+    const leitosOcupados = leitos.filter((l: Leito) => l.paciente !== null).length;
     const leitosDisponiveis = totalLeitos - leitosOcupados;
     const ocupacao = totalLeitos > 0 ? Math.round((leitosOcupados / totalLeitos) * 100) : 0;
 
-    // Novos KPIs
-    const pacientesRegulados = leitos.filter(l => l.paciente?.status === 'Regulado').length;
-    const aguardandoTransporte = leitos.filter(l => l.paciente?.status === 'Aguardando Transporte').length;
+    console.log('📊 Dashboard: Total:', totalLeitos, 'Occupied:', leitosOcupados, 'Available:', leitosDisponiveis);
 
-    this.kpis = [
+    // Live counts
+    const pacientesReguladosLive = leitos.filter((l: Leito) => l.paciente?.status === 'Regulado').length;
+    const aguardandoTransporteLive = leitos.filter((l: Leito) => l.paciente?.status === 'Aguardando Transporte').length;
+
+    // Helper to get cumulative value
+    const getCumulativeValue = (name: string) => {
+      const kpi = cumulative.find((k: Kpi) => k.name === name);
+      return kpi ? kpi.valor : 0;
+    };
+
+    return [
       {
         titulo: 'Total Pacientes',
         valor: leitosOcupados.toString(),
@@ -75,30 +72,41 @@ export class DashboardComponent implements OnInit, OnDestroy {
         cor: leitosDisponiveis < 5 ? 'red' : 'green'
       },
       {
-        titulo: 'Regulados',
-        valor: pacientesRegulados.toString(),
+        titulo: 'Regulados (Atual)',
+        valor: pacientesReguladosLive.toString(),
         name: 'ambulance',
         cor: 'orange'
       },
       {
-        titulo: 'Aguardando Transp.',
-        valor: aguardandoTransporte.toString(),
+        titulo: 'Aguard. Transp.',
+        valor: aguardandoTransporteLive.toString(),
         name: 'commute',
         cor: 'purple'
       },
       {
-        titulo: 'Total Leitos',
-        valor: totalLeitos.toString(),
+        titulo: 'Saídas (Total)',
+        valor: getCumulativeValue('exit_to_app').toString(),
+        name: 'exit_to_app',
+        cor: 'green'
+      },
+      {
+        titulo: 'Saídas Regulação',
+        valor: getCumulativeValue('local_hospital').toString(),
         name: 'local_hospital',
-        cor: 'purple'
+        cor: 'blue'
+      },
+      {
+        titulo: 'Altas',
+        valor: getCumulativeValue('check_circle').toString(),
+        name: 'check_circle',
+        cor: 'green'
       }
     ];
-  }
+  });
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+  novoAvisoTitulo = '';
+  novoAvisoMensagem = '';
+  novoAvisoTipo: 'critico' | 'info' | 'sucesso' = 'info';
 
   publicarAviso(): void {
     if (this.novoAvisoTitulo.trim() && this.novoAvisoMensagem.trim()) {
@@ -152,5 +160,28 @@ export class DashboardComponent implements OnInit, OnDestroy {
       'sucesso': 'check_circle'
     };
     return icons[tipo] || 'info';
+  }
+
+  navigateToHistory(kpiName: string) {
+    let filter = 'all';
+
+    switch (kpiName) {
+      case 'groups': // Total Pacientes
+        filter = 'total';
+        break;
+      case 'exit_to_app': // Saídas (Total)
+        filter = 'all'; // or 'alta' + 'regulacao' if we had a combined filter
+        break;
+      case 'local_hospital': // Saídas Regulação
+        filter = 'regulacao';
+        break;
+      case 'check_circle': // Altas
+        filter = 'alta';
+        break;
+      default:
+        return; // Don't navigate for other KPIs
+    }
+
+    this.router.navigate(['/patient-history'], { queryParams: { filter } });
   }
 }
