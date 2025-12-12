@@ -20,7 +20,7 @@ export class UserService {
     // pega o usuário pelo UID
     getUser(uid: string): Observable<User | undefined> {
         const userRef = doc(this.firestore, `users/${uid}`);
-        return docData(userRef) as Observable<User | undefined>;
+        return docData(userRef, { idField: 'uid' }) as Observable<User | undefined>;
     }
 
     //checa se o usuário é admin
@@ -34,40 +34,12 @@ export class UserService {
         return false;
     }
 
-    /**
-     * Sets the online status of a user
-     * Use this for quick status changes
-     */
-    async setOnlineStatus(uid: string, isOnline: boolean): Promise<void> {
-        const userRef = doc(this.firestore, `users/${uid}`);
-        await setDoc(userRef, { isOnline }, { merge: true });
-        console.log(`[UserService] Online status set to ${isOnline} for user ${uid}`);
-    }
 
-
-
-    /**
-     * Updates online status (for login/logout events)
-     */
-    async updateUserStatus(uid: string, isOnline: boolean): Promise<void> {
-        const userRef = doc(this.firestore, `users/${uid}`);
-        // Only update isOnline
-        console.log(`🔥 [UserService] WRITING to Firestore: User ${uid} isOnline=${isOnline}`);
-        await setDoc(userRef, { isOnline }, { merge: true });
-        console.log(`✅ [UserService] Write complete: User ${uid} isOnline=${isOnline}`);
-    }
 
     // Atualiza dados do usuário
     async updateUser(user: Partial<User>): Promise<void> {
         if (!user.uid) throw new Error('User UID is required for update');
         const userRef = doc(this.firestore, `users/${user.uid}`);
         await setDoc(userRef, user, { merge: true });
-    }
-
-    // Pega usuários online
-    getOnlineUsers(): Observable<User[]> {
-        const usersRef = collection(this.firestore, 'users');
-        const q = query(usersRef, where('isOnline', '==', true));
-        return collectionData(q, { idField: 'uid' }) as Observable<User[]>;
     }
 }

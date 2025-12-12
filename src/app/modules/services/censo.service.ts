@@ -44,7 +44,8 @@ export class CensoService {
                         const data = doc.data();
                         return {
                             id: doc.id,
-                            ...data
+                            ...data,
+                            paciente: data['paciente'] || null
                         } as unknown as Leito;
                     });
 

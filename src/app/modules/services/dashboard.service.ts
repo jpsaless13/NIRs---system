@@ -1,5 +1,5 @@
 import { Injectable, inject, signal, computed, WritableSignal } from '@angular/core';
-import { Firestore, collection, doc, setDoc, deleteDoc, updateDoc, query, onSnapshot, increment } from '@angular/fire/firestore';
+import { Firestore, collection, doc, setDoc, deleteDoc, updateDoc, query, onSnapshot, increment, where } from '@angular/fire/firestore';
 import { Auth, onAuthStateChanged } from '@angular/fire/auth';
 import { Aviso, Kpi } from '../interfaces/dashboard.models';
 
@@ -18,8 +18,13 @@ export class DashboardService {
     private auth = inject(Auth);
     private firestore = inject(Firestore);
 
+    // History for stats
+    private _historyStats = signal<any[]>([]);
+    readonly historyStats = this._historyStats.asReadonly();
+
     constructor() {
         this.initListeners();
+        this.initHistoryStatsListener();
     }
 
     private initListeners() {
@@ -44,7 +49,7 @@ export class DashboardService {
                     console.error('Error in DashboardService avisos listener:', error);
                 });
 
-                // Handle KPIs
+                // Handle KPIs (Legacy/Cumulative)
                 const kpisCollection = collection(this.firestore, 'kpis');
                 const kpisQuery = query(kpisCollection);
 
@@ -65,6 +70,33 @@ export class DashboardService {
             } else {
                 this._avisos.set([]);
                 this._kpis.set([]);
+                this._historyStats.set([]);
+            }
+        });
+    }
+
+    private initHistoryStatsListener() {
+        onAuthStateChanged(this.auth, (user) => {
+            if (user) {
+                // Fetch history for the last 2 years to calculate stats
+                // We can filter for Day/Month client-side
+                const currentYear = new Date().getFullYear();
+                const startOfHistory = new Date(currentYear - 2, 0, 1);
+                const historyRef = collection(this.firestore, 'historico_pacientes');
+                const q = query(historyRef, where('dataSaida', '>=', startOfHistory));
+
+                onSnapshot(q, (snapshot) => {
+                    const history = snapshot.docs.map(doc => {
+                        const data = doc.data();
+                        return {
+                            ...data,
+                            dataSaida: data['dataSaida']?.toDate ? data['dataSaida'].toDate() : new Date(data['dataSaida'])
+                        };
+                    });
+                    this._historyStats.set(history);
+                }, (error) => {
+                    console.error('Error in DashboardService history stats listener:', error);
+                });
             }
         });
     }

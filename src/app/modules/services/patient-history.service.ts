@@ -6,6 +6,7 @@ import { Paciente } from '../interfaces/censo.models';
 export interface HistoricoPaciente extends Paciente {
     tipoSaida: string;
     dataSaida: any; // Timestamp or Date
+    originalId?: string;
 }
 
 @Injectable({
@@ -36,8 +37,9 @@ export class PatientHistoryService {
                     const history = snapshot.docs.map(doc => {
                         const data = doc.data();
                         return {
-                            id: doc.id,
                             ...data,
+                            id: doc.id, // Use document ID for operations
+                            originalId: data['id'], // Preserve original ID
                             // Ensure dates are handled correctly
                             dataSaida: data['dataSaida']?.toDate ? data['dataSaida'].toDate() : new Date(data['dataSaida']),
                             dataAdmissao: data['dataAdmissao']?.toDate ? data['dataAdmissao'].toDate() : data['dataAdmissao']

@@ -157,7 +157,6 @@ export class CreateUserComponent {
         displayName,
         cargo,
         role,
-        isOnline: false,
         createdAt: new Date()
       };
 
