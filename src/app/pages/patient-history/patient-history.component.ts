@@ -109,7 +109,7 @@ interface GeneralPatient extends Paciente {
               {{ p.recurso || 'N/A' }}
             </div>
             <div class="col-dest">
-              {{ p.destino || (p.isCurrent ? '-' : p.tipoSaida) }}
+              {{ p.unidadeDestino || p.destino || (p.isCurrent ? '-' : p.tipoSaida) }}
             </div>
             
             <div class="col-actions">
@@ -159,6 +159,17 @@ interface GeneralPatient extends Paciente {
           <input type="text" [(ngModel)]="editingPatient.numeroRegulacao" class="form-control">
         </div>
 
+        <div class="form-group" *ngIf="!editingPatient.isCurrent">
+          <label>Tipo de Saída</label>
+          <select [(ngModel)]="editingPatient.tipoSaida" class="form-control">
+            <option value="Alta">Alta</option>
+            <option value="Regulação">Regulação</option>
+            <option value="Óbito">Óbito</option>
+            <option value="Evasão">Evasão</option>
+            <option value="Transferência">Transferência</option>
+          </select>
+        </div>
+
         <div class="form-group">
           <label>Unidade Destino</label>
           <input type="text" [(ngModel)]="editingPatient.unidadeDestino" class="form-control">
@@ -182,6 +193,22 @@ interface GeneralPatient extends Paciente {
         <div class="modal-actions">
           <button class="btn-cancel" (click)="closeEditModal()">Cancelar</button>
           <button class="btn-save" (click)="saveEdit()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" *ngIf="patientToDelete" (click)="cancelDelete()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <h2>Confirmar Exclusão</h2>
+        <p>Tem certeza que deseja excluir PERMANENTEMENTE o histórico de <strong>{{ patientToDelete.nome }}</strong>?</p>
+        <p class="warning-text">Esta ação não pode ser desfeita.</p>
+        
+        <div class="modal-actions">
+          <button class="btn-cancel" (click)="cancelDelete()" [disabled]="isDeleting()">Cancelar</button>
+          <button class="btn-delete-confirm" (click)="confirmDelete()" [disabled]="isDeleting()">
+            {{ isDeleting() ? 'Excluindo...' : 'Excluir' }}
+          </button>
         </div>
       </div>
     </div>
@@ -351,6 +378,12 @@ interface GeneralPatient extends Paciente {
       padding: 0.5rem 1rem; border: none; background: #3498db; color: white;
       border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.9rem;
     }
+    .btn-delete-confirm {
+      padding: 0.5rem 1rem; border: none; background: #e74c3c; color: white;
+      border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.9rem;
+    }
+    .btn-delete-confirm:disabled { opacity: 0.7; cursor: not-allowed; }
+    .warning-text { color: #e74c3c; font-size: 0.9rem; margin-top: -0.5rem; margin-bottom: 1.5rem; }
   `]
 })
 export class PatientHistoryComponent implements OnInit {
@@ -440,10 +473,14 @@ export class PatientHistoryComponent implements OnInit {
 
   // Edit State
   editingPatient: GeneralPatient | null = null;
+
+  // Delete State
+  patientToDelete: GeneralPatient | null = null;
+  isDeleting = signal(false);
   editingPatientAdmissionDate: string = '';
   editingPatientExitDate: string = '';
 
-  async deletePatient(p: GeneralPatient) {
+  deletePatient(p: GeneralPatient) {
     if (p.isCurrent) {
       alert('Para remover pacientes internados, utilize a tela do Censo.');
       return;
@@ -455,16 +492,28 @@ export class PatientHistoryComponent implements OnInit {
       return;
     }
 
-    if (confirm(`Tem certeza que deseja excluir PERMANENTEMENTE o histórico de "${p.nome}"?`)) {
-      try {
-        console.log('Deleting patient with ID:', p.id);
-        await this.historyService.deleteHistory(p.id);
-        // Signal updates automatically
-      } catch (error) {
-        console.error('Error deleting patient:', error);
-        alert('Erro ao excluir registro. Verifique o console para mais detalhes.');
-      }
+    this.patientToDelete = p;
+  }
+
+  async confirmDelete() {
+    if (!this.patientToDelete || !this.patientToDelete.id) return;
+
+    this.isDeleting.set(true);
+    try {
+      console.log('Deleting patient with ID:', this.patientToDelete.id);
+      await this.historyService.deleteHistory(this.patientToDelete.id);
+      // Signal updates automatically via onSnapshot in service
+      this.patientToDelete = null;
+    } catch (error) {
+      console.error('Error deleting patient:', error);
+      alert('Erro ao excluir registro. Verifique o console para mais detalhes.');
+    } finally {
+      this.isDeleting.set(false);
     }
+  }
+
+  cancelDelete() {
+    this.patientToDelete = null;
   }
 
   openEditModal(p: GeneralPatient) {
@@ -494,25 +543,26 @@ export class PatientHistoryComponent implements OnInit {
   }
 
   async saveEdit() {
-    if (!this.editingPatient) return;
+    if (!this.editingPatient || !this.editingPatient.id) {
+      console.error('Cannot save edit: Missing patient or ID');
+      return;
+    }
 
     try {
+      console.log('Saving edit for patient ID:', this.editingPatient.id);
+
       const updates: any = {
         nome: this.editingPatient.nome,
         idade: this.editingPatient.idade,
         recurso: this.editingPatient.recurso,
         suspeitaDiagnostica: this.editingPatient.suspeitaDiagnostica,
         numeroRegulacao: this.editingPatient.numeroRegulacao,
-        pendencias: this.editingPatient.pendencias
+        pendencias: this.editingPatient.pendencias,
+        tipoSaida: this.editingPatient.tipoSaida, // Include tipoSaida
+        // Explicitly handle optional fields to allow clearing (send null if empty)
+        unidadeDestino: this.editingPatient.unidadeDestino || null,
+        destino: this.editingPatient.destino || null
       };
-
-      if (this.editingPatient.unidadeDestino) {
-        updates.unidadeDestino = this.editingPatient.unidadeDestino;
-      }
-
-      if (this.editingPatient.destino) {
-        updates.destino = this.editingPatient.destino;
-      }
 
       if (this.editingPatientAdmissionDate) {
         updates.dataAdmissao = new Date(this.editingPatientAdmissionDate);
@@ -522,13 +572,18 @@ export class PatientHistoryComponent implements OnInit {
         updates.dataSaida = new Date(this.editingPatientExitDate);
       }
 
-      console.log('Saving edits for patient:', this.editingPatient.id, updates);
+      console.log('Updates payload:', updates);
 
       if (this.editingPatient.isCurrent) {
         // Update in Census (Leitos)
+        // Find the bed containing this patient
         const leito = this.censoService.leitos().find(l => l.paciente?.id === this.editingPatient!.id);
         if (leito) {
+          // We need to update the patient object inside the bed
+          // Note: CensoService.updatePaciente expects partial Paciente
           await this.censoService.updatePaciente(leito.id, { ...leito.paciente!, ...updates });
+        } else {
+          console.error('Could not find bed for current patient:', this.editingPatient.id);
         }
       } else {
         // Update in History

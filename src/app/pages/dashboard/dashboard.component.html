@@ -9,29 +9,88 @@
         </div>
     </header>
 
-    <!-- KPI Cards -->
-    <section class="kpi-grid fade-in">
-        @for (kpi of kpis(); track kpi.name) {
-        <div class="kpi-card" [ngClass]="kpi.cor">
-            <div class="icon-box">
-                <span class="material-symbols-outlined">{{ kpi.name }}</span>
-            </div>
-            <div class="kpi-info">
-                <span class="label">{{ kpi.titulo }}</span>
-                <div class="value">{{ kpi.valor }}</div>
+    <!-- Carousel Section -->
+    <section class="dashboard-carousel fade-in">
+        <div class="carousel-header">
+            <div class="carousel-controls">
+                <button class="nav-btn" (click)="prevView()">
+                    <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+
+                <div class="carousel-title">
+                    <h2>
+                        @if (viewMode === 'dia') { Estatísticas do Dia }
+                        @else if (viewMode === 'mes') { Estatísticas Mensais }
+                        @else { Estatísticas Anuais }
+                    </h2>
+
+                    <!-- Filters -->
+                    <div class="filters">
+                        @if (viewMode === 'mes') {
+                        <select [ngModel]="currentMonthIndex" (ngModelChange)="setMonth($event)" class="filter-select">
+                            @for (month of months; track $index) {
+                            <option [value]="$index">{{ month }}</option>
+                            }
+                        </select>
+                        }
+
+                        @if (viewMode === 'ano' || viewMode === 'mes') {
+                        <select [ngModel]="currentYear" (ngModelChange)="setYear($event)" class="filter-select">
+                            @for (year of years; track year) {
+                            <option [value]="year">{{ year }}</option>
+                            }
+                        </select>
+                        }
+
+                        @if (viewMode === 'dia') {
+                        <span class="date-display">{{ selectedDate | date:'dd/MM/yyyy' }}</span>
+                        }
+                    </div>
+                </div>
+
+                <button class="nav-btn" (click)="nextView()">
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </button>
             </div>
 
-            <!-- Click button for history navigation -->
-            @if (['groups', 'exit_to_app', 'local_hospital', 'check_circle'].includes(kpi.name)) {
-            <button class="kpi-action-btn" (click)="navigateToHistory(kpi.name)" title="Ver detalhes">
-                <span class="material-symbols-outlined">ads_click</span>
+            <button class="pause-btn" (click)="togglePause()" [class.paused]="isPaused" title="Pausar/Continuar (3s)">
+                <span class="material-symbols-outlined">{{ isPaused ? 'play_arrow' : 'pause' }}</span>
             </button>
+        </div>
+
+        <!-- KPI Grid (Carousel Content) -->
+        <div class="kpi-grid">
+            @for (kpi of kpis(); track kpi.name) {
+            <div class="kpi-card" [ngClass]="kpi.cor">
+                <div class="icon-box">
+                    <span class="material-symbols-outlined">{{ kpi.name }}</span>
+                </div>
+                <div class="kpi-info">
+                    <span class="label">
+                        {{ kpi.titulo }}
+                    </span>
+                    <div class="value">{{ kpi.valor }}</div>
+                </div>
+
+                <!-- Click button for history navigation -->
+                @if (['groups', 'exit_to_app', 'local_hospital', 'check_circle'].includes(kpi.name)) {
+                <button class="kpi-action-btn" (click)="navigateToHistory(kpi.name)" title="Ver detalhes">
+                    <span class="material-symbols-outlined">ads_click</span>
+                </button>
+                }
+            </div>
             }
+        </div>
+
+        <!-- Progress Bar for Timer -->
+        @if (showProgressBar()) {
+        <div class="carousel-progress" [class.paused]="isPaused">
+            <div class="progress-bar"></div>
         </div>
         }
     </section>
 
-    <!-- Content Grid -->
+    <!-- Content Grid (Fixed) -->
     <section class="content-grid">
         <!-- Create Notice Card -->
         <div class="card create-notice-card slide-in-left">
@@ -53,20 +112,10 @@
                 <div class="actions-row">
                     <div class="priority-wrapper">
                         <span class="label-prio">Tipo:</span>
-                        <div class="radio-group">
-                            <label [class.active]="novoAvisoTipo === 'info'">
-                                <input type="radio" name="tipo" [(ngModel)]="novoAvisoTipo" value="info" />
-                                Info
-                            </label>
-                            <label [class.active]="novoAvisoTipo === 'sucesso'">
-                                <input type="radio" name="tipo" [(ngModel)]="novoAvisoTipo" value="sucesso" />
-                                Sucesso
-                            </label>
-                            <label [class.active]="novoAvisoTipo === 'critico'" class="critico-opt">
-                                <input type="radio" name="tipo" [(ngModel)]="novoAvisoTipo" value="critico" />
-                                Crítico
-                            </label>
-                        </div>
+                        <select [(ngModel)]="novoAvisoTipo" class="form-control type-select">
+                            <option value="normal">Normal</option>
+                            <option value="urgente">Urgente</option>
+                        </select>
                     </div>
 
                     <button class="btn-send" (click)="publicarAviso()"

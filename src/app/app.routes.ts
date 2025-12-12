@@ -45,10 +45,7 @@ export const routes: Routes = [
                 path: 'profile-settings',
                 loadComponent: () => import('./pages/profile-settings/profile-settings.component').then(m => m.ProfileSettingsComponent)
             },
-            {
-                path: 'online-users',
-                loadComponent: () => import('./pages/online-users/online-users.component').then(m => m.OnlineUsersComponent)
-            },
+
             {
                 path: 'patient-history',
                 loadComponent: () => import('./pages/patient-history/patient-history.component').then(m => m.PatientHistoryComponent)

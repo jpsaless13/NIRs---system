@@ -2,6 +2,7 @@ import { Injectable, signal, computed, effect, Injector, inject } from '@angular
 import { BehaviorSubject, Observable, from, of } from 'rxjs';
 import { Router } from '@angular/router';
 import { Auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, User as FirebaseUser, createUserWithEmailAndPassword, updateProfile } from '@angular/fire/auth';
+import { Firestore, doc, setDoc } from '@angular/fire/firestore';
 import { UserService } from './user.service';
 import { User, UserRole } from '../interfaces/user.model';
 import { switchMap, map, tap } from 'rxjs/operators';
@@ -34,6 +35,7 @@ export class AuthService {
 
     constructor(
         private auth: Auth,
+        private firestore: Firestore,
         private router: Router,
         private userService: UserService
     ) {
@@ -48,26 +50,6 @@ export class AuthService {
 
         this.initAuthStateListener();
         this.initInactivityListener();
-        this.initOnlineStatusEffect();
-    }
-
-    private initOnlineStatusEffect() {
-        // Effect to handle Online/Offline status automatically
-        effect((onCleanup) => {
-            const uid = this.userId();
-
-            if (uid) {
-                console.log(`[AuthEffect] User ${uid} detected. Setting Online.`);
-                // Set Online
-                this.userService.updateUserStatus(uid, true);
-
-                // Register cleanup to set Offline when uid changes (logout) or effect destroyed
-                onCleanup(() => {
-                    console.log(`[AuthEffect] User ${uid} session ended. Setting Offline.`);
-                    this.userService.updateUserStatus(uid, false);
-                });
-            }
-        });
     }
 
     private inactivityTimer: any;
@@ -90,11 +72,7 @@ export class AuthService {
     }
 
     private setAsOffline() {
-        const user = this.currentUser();
-        if (user) {
-            console.log('User inactive for 2 hours. Setting as offline.');
-            this.userService.updateUserStatus(user.uid, false);
-        }
+        // Feature removed
     }
 
     private initAuthStateListener() {
@@ -136,7 +114,24 @@ export class AuthService {
     login(usuario: string, senha: string): Observable<boolean> {
         this._loading.set(true);
         return from(signInWithEmailAndPassword(this.auth, usuario, senha)).pipe(
-            map(() => true),
+            switchMap(async (cred) => {
+                if (cred.user) {
+                    // Sync basic data
+                    // This ensures that even if the Firestore document is missing/empty,
+                    // we at least have the Auth data (preventing "U" / "Sem Cargo" display issues).
+                    const updateData = {
+                        email: cred.user.email,
+                        displayName: cred.user.displayName,
+                        photoURL: cred.user.photoURL,
+                        lastLogin: new Date()
+                    };
+
+                    // Use setDoc with merge: true to preserve existing fields (like cargo)
+                    const userRef = doc(this.firestore, `users/${cred.user.uid}`);
+                    await setDoc(userRef, updateData, { merge: true });
+                }
+                return true;
+            }),
             tap({
                 error: (err) => {
                     console.error('Login error:', err);
@@ -162,7 +157,6 @@ export class AuthService {
                         displayName: displayName,
                         role: 'user',
                         cargo: cargo,
-                        isOnline: false,
                         createdAt: new Date()
                     };
 
@@ -181,7 +175,6 @@ export class AuthService {
     }
 
     logout(): void {
-        // Effect cleanup will handle offline status when _currentUser becomes null
         this._currentUser.set(null);
 
         signOut(this.auth).then(() => {
